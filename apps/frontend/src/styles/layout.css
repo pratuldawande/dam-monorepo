@@ -1,0 +1,27 @@
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  background: #f5f7fb;
+  padding: 30px;
+  margin-left: 240px; /* sidebar width */
+  transition: margin-left 0.3s ease;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 768px) {
+  .layout {
+    display: block;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 20px;
+    padding-top: 70px; /* space for menu button */
+  }
+}

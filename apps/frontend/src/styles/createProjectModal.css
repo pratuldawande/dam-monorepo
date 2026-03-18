@@ -1,0 +1,132 @@
+/* Overlay */
+.create-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* Modal */
+.create-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Title */
+.create-modal h3 {
+  margin: 0 0 20px 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* Form */
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Input */
+.create-form input,
+.create-form textarea {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.create-form input:focus,
+.create-form textarea:focus {
+  border-color: #4f46e5;
+}
+
+/* Textarea */
+.create-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Error text */
+.input-error {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+/* Button Row */
+.create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Cancel */
+.create-cancel {
+  background: #e5e7eb;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.create-cancel:hover {
+  background: #d1d5db;
+}
+
+/* Create */
+.create-submit {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.create-submit:hover {
+  opacity: 0.9;
+}
+
+.create-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .create-modal,
+  .confirm-modal {
+    padding: 20px;
+  }
+
+  .create-actions,
+  .confirm-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
