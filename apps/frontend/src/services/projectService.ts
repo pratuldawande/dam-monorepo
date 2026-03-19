@@ -1,26 +1,14 @@
 const API_BASE = import.meta.env.VITE_API_BASE;
 
-export interface ProjectsRes {
-  success: boolean;
-  message: string;
-  data: Project[];
-}
-export interface ProjectRes {
-  success: boolean;
-  message: string;
-  data: Project;
-}
-
 export interface Project {
   _id: string;
-  userId: string;
+  userId?: string;
   name: string;
   description: string;
-  createdAt: Date;
-  updatedAt: Date;
-  __v: number;
   filesCount: number;
   jobsCount: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CreateProjectReq {
@@ -28,92 +16,95 @@ export interface CreateProjectReq {
   description: string;
 }
 
-export const getProject = async (_id: string) => {
-  const response = await fetch(`${API_BASE}/projects/${_id}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
+export interface ProjectResponse {
+  success: boolean;
+  message: string;
+  data: Project;
+}
+
+export interface ProjectsRes {
+  success: boolean;
+  message: string;
+  data: Project[];
+}
+
+const getAuthHeaders = () => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${localStorage.getItem("token")}`,
+});
+
+export const getProjects = async (): Promise<ProjectsRes> => {
+  const response = await fetch(`${API_BASE}/projects`, {
+    method: "GET",
+    headers: getAuthHeaders(),
   });
+
   if (!response.ok) {
-    throw new Error('Projects fetch failed');
+    throw new Error("Projects fetch failed");
   }
 
-  const data: ProjectRes = await response.json();
-  console.log('Projects response data:', data);
-
-  return data;
+  return response.json() as Promise<ProjectsRes>;
 };
 
-export const getProjects = async () => {
-  const response = await fetch(`${API_BASE}/projects`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
+export const getProject = async (projectId: string): Promise<ProjectResponse> => {
+  const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
   });
+
   if (!response.ok) {
-    throw new Error('Projects fetch failed');
+    throw new Error("Project fetch failed");
   }
 
-  const data: ProjectsRes = await response.json();
-  console.log('Projects response data:', data);
-
-  return data;
+  return response.json() as Promise<ProjectResponse>;
 };
 
-export const createProject = async (name: string, description: string) => {
+export const createProject = async (
+  name: string,
+  description: string,
+): Promise<ProjectResponse> => {
   const response = await fetch(`${API_BASE}/projects`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
+    method: "POST",
+    headers: getAuthHeaders(),
     body: JSON.stringify({ name, description }),
   });
+
   if (!response.ok) {
-    throw new Error('Project creation failed');
+    throw new Error("Project creation failed");
   }
 
-  const data = await response.json();
-  return data;
+  return response.json() as Promise<ProjectResponse>;
 };
 
 export const updateProject = async (
   name: string,
   description: string,
-  _id: string
-) => {
-  const response = await fetch(`${API_BASE}/projects/${_id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
+  projectId: string,
+): Promise<ProjectResponse> => {
+  const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
     body: JSON.stringify({ name, description }),
   });
+
   if (!response.ok) {
-    throw new Error('Project update failed');
+    throw new Error("Project update failed");
   }
 
-  const data = await response.json();
-  return data;
+  return response.json() as Promise<ProjectResponse>;
 };
 
-export const deleteProject = async (_id: string) => {
-  const response = await fetch(`${API_BASE}/projects/${_id}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
+export const deleteProject = async (
+  projectId: string,
+): Promise<{ success: boolean; message: string }> => {
+  const response = await fetch(`${API_BASE}/projects/${projectId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
   });
+
   if (!response.ok) {
-    throw new Error('Project deletion failed');
+    throw new Error("Project deletion failed");
   }
 
-  const data = await response.json();
-  return data;
+  return response.json() as Promise<{ success: boolean; message: string }>;
 };

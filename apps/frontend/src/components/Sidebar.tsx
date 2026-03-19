@@ -1,14 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/sidebar.css';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const { logout, logoutLoading, user } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      navigate('/');
+    }
   };
 
   const toggleSidebar = () => {
@@ -32,6 +39,7 @@ const Sidebar = () => {
       <div className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-top">
           <h2 className="logo">Project Portal</h2>
+          {user && <p className="sidebar-link">{user.name}</p>}
 
           <nav>
             <NavLink
@@ -44,8 +52,8 @@ const Sidebar = () => {
           </nav>
         </div>
 
-        <button className="logout-btn" onClick={handleLogout}>
-          Logout
+        <button className="logout-btn" onClick={handleLogout} disabled={logoutLoading}>
+          {logoutLoading ? 'Logging out...' : 'Logout'}
         </button>
       </div>
     </>

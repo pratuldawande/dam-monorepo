@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../services/authService';
+import { useAuth } from '../hooks/useAuth';
 import '../styles/login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, login, loginLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [apiError, setApiError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  //Redirect if token already exists
   useEffect(() => {
-    const token = localStorage.getItem('token'); // or wherever you store it
-    if (token) {
+    if (isAuthenticated) {
       navigate('/projects');
     }
-  }, [navigate]);
+  }, [isAuthenticated, navigate]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,15 +49,10 @@ const Login = () => {
     if (!isValid) return;
 
     try {
-      setLoading(true);
-
-      await loginUser(email, password);
-
+      await login({ email, password });
       navigate('/projects');
-    } catch (err: any) {
-      setApiError(err.message);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : 'Login failed');
     }
   };
 
@@ -93,8 +86,8 @@ const Login = () => {
 
           {apiError && <p className="error-text">{apiError}</p>}
 
-          <button type="submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          <button type="submit" disabled={loginLoading}>
+            {loginLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
