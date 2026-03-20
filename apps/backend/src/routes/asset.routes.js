@@ -1,11 +1,18 @@
 const express = require("express");
-const multer = require("multer");
-// const assetController = require("../controllers/asset.controller");
 const assetController = require("../controllers/asset.controller");
+const { validate } = require("../middlewares/validate.middleware");
+const upload = require("../utils/upload");
+const { assetUploadValidator } = require("../validators/asset.validator");
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", upload.array("files"), assetController.upload);
+router.get("/", assetController.list);
+router.post(
+  "/upload",
+  upload.array("files"),
+  assetUploadValidator,
+  validate,
+  assetController.upload,
+);
 
 module.exports = router;

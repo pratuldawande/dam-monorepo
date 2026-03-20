@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 
 const assetSchema = new mongoose.Schema({
+  originalName: String,
   filename: String,
+  bucket: String,
   url: String,
   type: String,
   size: Number,
@@ -9,8 +11,8 @@ const assetSchema = new mongoose.Schema({
   metadata: Object,
   status: {
     type: String,
-    enum: ["uploaded", "processing", "completed"],
-    default: "uploaded",
+    enum: ["queued", "processing", "completed", "failed"],
+    default: "queued",
   },
 }, { timestamps: true });
 
