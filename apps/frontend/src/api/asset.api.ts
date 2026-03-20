@@ -2,6 +2,7 @@ import API from "./axios";
 
 export interface Asset {
   _id: string;
+  userId?: string;
   originalName?: string;
   name?: string;
   url?: string;

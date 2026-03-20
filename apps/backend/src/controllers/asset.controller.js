@@ -12,9 +12,10 @@ const list = async (_req, res, next) => {
 const upload = async (req, res, next) => {
   try {
     const files = req.files || [];
+    const userId = req.user?.userId;
 
     const uploads = await Promise.all(
-      files.map((file) => assetService.uploadAsset(file))
+      files.map((file) => assetService.uploadAsset({ file, userId }))
     );
 
     res.json({

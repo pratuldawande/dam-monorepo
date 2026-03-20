@@ -18,7 +18,7 @@ const buildObjectUrl = (objectName) => {
 const buildObjectName = (originalName) =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${originalName}`;
 
-const uploadAsset = async (file) => {
+const uploadAsset = async ({ file, userId }) => {
   const objectName = buildObjectName(file.originalname);
   const metaData = {
     "Content-Type": file.mimetype,
@@ -28,13 +28,14 @@ const uploadAsset = async (file) => {
     await minioClient.putObject(MINIO_BUCKET, objectName, stream, file.size, metaData);
 
     const asset = await Asset.create({
+      userId,
       originalName: file.originalname,
       filename: objectName,
       bucket: MINIO_BUCKET,
       url: buildObjectUrl(objectName),
       type: file.mimetype,
       size: file.size,
-      tags: [file.mimetype.split("/")[0]],
+      tags: [file.mimetype.split("/")[0],],
       metadata: {
         fieldName: file.fieldname,
       },
@@ -43,6 +44,7 @@ const uploadAsset = async (file) => {
 
     await publishAssetMessage({
       assetId: asset._id.toString(),
+      userId: userId.toString(),
       bucket: MINIO_BUCKET,
       objectName,
       mimeType: file.mimetype,
