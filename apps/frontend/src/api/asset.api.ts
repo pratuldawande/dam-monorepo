@@ -6,7 +6,24 @@ export interface Asset {
   originalName?: string;
   name?: string;
   url?: string;
+  type?: string;
+  size?: number;
   status?: string;
+  metadata?: {
+    thumbnails?: Array<{
+      url?: string;
+      objectName?: string;
+      size?: number;
+      contentType?: string;
+    }>;
+    variants?: Array<{
+      url?: string;
+      objectName?: string;
+      size?: number;
+      contentType?: string;
+      resolution?: string;
+    }>;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -28,6 +45,11 @@ export interface UploadAssetsResponse {
   data: Asset[];
 }
 
+export interface DeleteAssetResponse {
+  success: boolean;
+  message: string;
+}
+
 export const getAssets = (params?: AssetQueryParams) =>
   API.get<GetAssetsResponse>("/assets", { params }).then((res) => res.data);
 
@@ -40,3 +62,6 @@ export const uploadAssets = (files: File[]) => {
     headers: { "Content-Type": "multipart/form-data" },
   }).then((res) => res.data);
 };
+
+export const deleteAsset = (assetId: string) =>
+  API.delete<DeleteAssetResponse>(`/assets/${assetId}`).then((res) => res.data);

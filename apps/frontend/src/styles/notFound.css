@@ -1,9 +1,10 @@
 .notfound-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #f5f6fa;
+  padding: 24px;
 }
 
 .notfound-card {
@@ -41,4 +42,19 @@
 
 .notfound-button:hover {
   opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .notfound-container {
+    padding: 16px;
+  }
+
+  .notfound-card {
+    width: 100%;
+    padding: 28px 20px;
+  }
+
+  .notfound-code {
+    font-size: 56px;
+  }
 }

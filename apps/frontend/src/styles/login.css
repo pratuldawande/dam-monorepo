@@ -1,10 +1,11 @@
 /* Full screen center */
 .login-container {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #4f46e5, #6366f1);
+  padding: 24px;
 }
 
 /* Card */
@@ -56,7 +57,7 @@
 }
 
 /* Button */
-button {
+.login-card button {
   width: 100%;
   padding: 12px;
   border: none;
@@ -68,11 +69,11 @@ button {
   transition: 0.3s;
 }
 
-button:hover {
+.login-card button:hover {
   background-color: #4338ca;
 }
 
-button:disabled {
+.login-card button:disabled {
   background-color: #999;
   cursor: not-allowed;
 }
@@ -85,7 +86,18 @@ button:disabled {
 
 /* Responsive */
 @media (max-width: 480px) {
+  .login-container {
+    padding: 16px;
+    align-items: stretch;
+  }
+
   .login-card {
-    padding: 30px 20px;
+    max-width: none;
+    margin: auto 0;
+    padding: 28px 18px;
+  }
+
+  .login-card h2 {
+    font-size: 26px;
   }
 }

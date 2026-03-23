@@ -43,18 +43,20 @@ const Sidebar = () => {
 
           <nav>
             <NavLink
-              to="/projects"
+              to="/assets"
               className="sidebar-link"
               onClick={closeSidebar}
             >
-              Projects
+              Assets
             </NavLink>
           </nav>
         </div>
 
-        <button className="logout-btn" onClick={handleLogout} disabled={logoutLoading}>
-          {logoutLoading ? 'Logging out...' : 'Logout'}
-        </button>
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout} disabled={logoutLoading}>
+            {logoutLoading ? 'Logging out...' : 'Logout'}
+          </button>
+        </div>
       </div>
     </>
   );

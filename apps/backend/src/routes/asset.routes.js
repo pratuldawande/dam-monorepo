@@ -7,13 +7,14 @@ const { assetUploadValidator } = require("../validators/asset.validator");
 
 const router = express.Router();
 router.use(authMiddleware);
-router.get("/", assetController.list);
+router.get("/", assetController.listAssets);
 router.post(
   "/upload",
   upload.array("files"),
   assetUploadValidator,
   validate,
-  assetController.upload,
+  assetController.uploadAssets
 );
+router.delete("/:assetId", assetController.deleteAsset);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const assetService = require("../services/asset.service");
 
-const list = async (_req, res, next) => {
+const listAssets = async (_req, res, next) => {
   try {
     const response = await assetService.listAssets();
     res.json(response);
@@ -9,7 +9,7 @@ const list = async (_req, res, next) => {
   }
 };
 
-const upload = async (req, res, next) => {
+const uploadAssets = async (req, res, next) => {
   try {
     const files = req.files || [];
     const userId = req.user?.userId;
@@ -28,7 +28,21 @@ const upload = async (req, res, next) => {
   }
 };
 
+const deleteAsset = async (req, res, next) => {
+  try {
+    const response = await assetService.deleteAsset({
+      assetId: req.params.assetId,
+      userId: req.user?.userId,
+    });
+
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
-  list,
-  upload,
+  listAssets,
+  deleteAsset,
+  uploadAssets,
 };
