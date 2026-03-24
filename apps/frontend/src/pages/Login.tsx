@@ -50,7 +50,7 @@ const Login = () => {
 
     try {
       await login({ email, password });
-      navigate('/projects');
+      navigate('/assets');
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Login failed');
     }

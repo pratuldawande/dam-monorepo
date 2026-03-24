@@ -33,11 +33,23 @@ export interface AssetQueryParams {
   limit?: number;
   search?: string;
   status?: string;
+  type?: string;
+}
+
+export interface AssetsMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  search: string;
+  status: string;
+  type: string;
 }
 
 export interface GetAssetsResponse {
   success: boolean;
   data: Asset[];
+  meta: AssetsMeta;
 }
 
 export interface UploadAssetsResponse {

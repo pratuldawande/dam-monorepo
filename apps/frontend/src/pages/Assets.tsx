@@ -1,8 +1,10 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteAsset, uploadAssets, type Asset } from "../api/asset.api";
 import { useAssets } from "../hooks/useAssets";
 import "../styles/assets.css";
+
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const formatBytes = (bytes?: number) => {
   if (!bytes) {
@@ -40,9 +42,31 @@ const getAssetPreview = (asset: Asset) => {
 const Assets = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const queryClient = useQueryClient();
-  const { data, isLoading, isError, error } = useAssets();
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  const { data, isLoading, isError, error, isFetching } = useAssets({
+    page,
+    limit,
+    search: search || undefined,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    type: typeFilter === "all" ? undefined : typeFilter,
+  });
 
   const uploadMutation = useMutation({
     mutationFn: uploadAssets,
@@ -59,6 +83,27 @@ const Assets = () => {
   });
 
   const assets = data?.data ?? [];
+  const meta = data?.meta;
+  const totalAssets = meta?.total ?? 0;
+  const currentPage = meta?.page ?? page;
+  const currentLimit = meta?.limit ?? limit;
+  const totalPages = meta?.totalPages ?? 0;
+  const hasFilters = Boolean(search) || statusFilter !== "all" || typeFilter !== "all";
+
+  useEffect(() => {
+    if (!meta) {
+      return;
+    }
+
+    if (totalPages === 0 && page !== 1) {
+      setPage(1);
+      return;
+    }
+
+    if (totalPages > 0 && page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [meta, page, totalPages]);
 
   const mergeFiles = (incomingFiles: File[]) => {
     setSelectedFiles((currentFiles) => {
@@ -121,6 +166,14 @@ const Assets = () => {
     await deleteMutation.mutateAsync(assetId);
   };
 
+  const clearFilters = () => {
+    setSearchInput("");
+    setSearch("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setPage(1);
+  };
+
   return (
     <div className="assets-page">
       <section className="assets-hero">
@@ -135,16 +188,16 @@ const Assets = () => {
 
         <div className="assets-hero-stats">
           <div className="asset-stat-card">
-            <span>Total Assets</span>
+            <span>Matching Assets</span>
+            <strong>{totalAssets}</strong>
+          </div>
+          <div className="asset-stat-card">
+            <span>Visible Rows</span>
             <strong>{assets.length}</strong>
           </div>
           <div className="asset-stat-card">
-            <span>Queued</span>
-            <strong>{assets.filter((asset) => asset.status === "queued").length}</strong>
-          </div>
-          <div className="asset-stat-card">
-            <span>Completed</span>
-            <strong>{assets.filter((asset) => asset.status === "completed").length}</strong>
+            <span>Page</span>
+            <strong>{totalPages === 0 ? 0 : currentPage}</strong>
           </div>
         </div>
       </section>
@@ -245,9 +298,82 @@ const Assets = () => {
             <p className="assets-kicker">Library</p>
             <h2>Uploaded assets</h2>
           </div>
+          <div className="assets-table-toolbar">
+            <label className="asset-control asset-search-control">
+              <span>Search</span>
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Name, type, or tag"
+              />
+            </label>
+
+            <label className="asset-control">
+              <span>Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All statuses</option>
+                <option value="queued">Queued</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
+            </label>
+
+            <label className="asset-control">
+              <span>Type</span>
+              <select
+                value={typeFilter}
+                onChange={(event) => {
+                  setTypeFilter(event.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="all">All media</option>
+                <option value="image">Images</option>
+                <option value="video">Videos</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+
+            <label className="asset-control asset-limit-control">
+              <span>Rows</span>
+              <select
+                value={limit}
+                onChange={(event) => {
+                  setLimit(Number(event.target.value));
+                  setPage(1);
+                }}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option} / page
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className="asset-clear-filters-btn"
+              onClick={clearFilters}
+              disabled={!hasFilters}
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
         {isLoading ? <p className="asset-feedback">Loading assets...</p> : null}
+        {!isLoading && isFetching ? (
+          <p className="asset-feedback">Refreshing asset list...</p>
+        ) : null}
         {isError ? (
           <p className="asset-feedback error">
             {(error as Error)?.message || "Failed to load assets"}
@@ -334,6 +460,43 @@ const Assets = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        ) : null}
+
+        {!isLoading && !isError ? (
+          <div className="assets-pagination">
+            <p className="assets-pagination-summary">
+              {totalAssets === 0
+                ? "No matching assets"
+                : `Showing ${(currentPage - 1) * currentLimit + 1}-${Math.min(
+                    currentPage * currentLimit,
+                    totalAssets
+                  )} of ${totalAssets}`}
+            </p>
+
+            <div className="assets-pagination-actions">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={currentPage <= 1}
+              >
+                Previous
+              </button>
+              <span>
+                Page {totalPages === 0 ? 0 : currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((current) =>
+                    totalPages === 0 ? current : Math.min(totalPages, current + 1)
+                  )
+                }
+                disabled={totalPages === 0 || currentPage >= totalPages}
+              >
+                Next
+              </button>
+            </div>
           </div>
         ) : null}
       </section>

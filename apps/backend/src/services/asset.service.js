@@ -24,6 +24,7 @@ const buildObjectName = (originalName) =>
 
 const isImage = (mimeType = "") => mimeType.startsWith("image/");
 const isVideo = (mimeType = "") => mimeType.startsWith("video/");
+const escapeRegExp = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const uploadBufferToMinio = async ({ objectName, buffer, contentType }) => {
   await minioClient.putObject(MINIO_BUCKET, objectName, buffer, buffer.length, {
@@ -284,12 +285,60 @@ const uploadAsset = async ({ file, userId }) => {
   }
 };
 
-const listAssets = async () => {
-  const assets = await Asset.find().sort({ createdAt: -1 }).lean();
+const buildAssetListFilter = ({ search, status, type }) => {
+  const filter = {};
+
+  if (status) {
+    filter.status = status;
+  }
+
+  if (type === "image") {
+    filter.type = { $regex: /^image\// };
+  } else if (type === "video") {
+    filter.type = { $regex: /^video\// };
+  } else if (type === "other") {
+    filter.type = { $not: /^(image|video)\// };
+  }
+
+  if (search) {
+    const searchRegex = new RegExp(escapeRegExp(search), "i");
+    filter.$or = [
+      { originalName: searchRegex },
+      { filename: searchRegex },
+      { type: searchRegex },
+      { tags: searchRegex },
+    ];
+  }
+
+  return filter;
+};
+
+const listAssets = async ({ page = 1, limit = 10, search, status, type } = {}) => {
+  const normalizedPage = Number(page) || 1;
+  const normalizedLimit = Number(limit) || 10;
+  const filter = buildAssetListFilter({ search, status, type });
+
+  const [assets, total] = await Promise.all([
+    Asset.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((normalizedPage - 1) * normalizedLimit)
+      .limit(normalizedLimit)
+      .lean(),
+    Asset.countDocuments(filter),
+  ]);
 
   return {
     success: true,
     data: assets,
+    meta: {
+      page: normalizedPage,
+      limit: normalizedLimit,
+      total,
+      totalPages: total === 0 ? 0 : Math.ceil(total / normalizedLimit),
+      search: search || "",
+      status: status || "all",
+      type: type || "all",
+    },
   };
 };
 

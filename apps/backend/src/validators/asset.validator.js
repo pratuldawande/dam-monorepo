@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, query } = require("express-validator");
 const { MAX_FILE_SIZE_BYTES } = require("../config/env");
 
 exports.assetUploadValidator = [
@@ -27,4 +27,30 @@ exports.assetUploadValidator = [
 
     return true;
   }),
+];
+
+exports.assetListValidator = [
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("page must be an integer greater than 0")
+    .toInt(),
+  query("limit")
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage("limit must be an integer between 1 and 100")
+    .toInt(),
+  query("search")
+    .optional()
+    .isString()
+    .withMessage("search must be a string")
+    .trim(),
+  query("status")
+    .optional()
+    .isIn(["queued", "processing", "completed", "failed"])
+    .withMessage("status must be one of queued, processing, completed, or failed"),
+  query("type")
+    .optional()
+    .isIn(["image", "video", "other"])
+    .withMessage("type must be one of image, video, or other"),
 ];

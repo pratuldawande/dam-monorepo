@@ -251,11 +251,71 @@
 }
 
 .assets-table-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  flex-wrap: wrap;
   margin-bottom: 16px;
 }
 
 .assets-table-header h2 {
   font-size: 34px;
+}
+
+.assets-table-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.asset-control {
+  display: grid;
+  gap: 6px;
+}
+
+.asset-control span {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.asset-control input,
+.asset-control select {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: white;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.asset-search-control input {
+  min-width: 240px;
+}
+
+.asset-limit-control select {
+  min-width: 110px;
+}
+
+.asset-clear-filters-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 14px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.asset-clear-filters-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .assets-table-shell {
@@ -376,6 +436,49 @@
   color: #64748b;
 }
 
+.assets-pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.assets-pagination-summary {
+  margin: 0;
+  color: #475569;
+  font-size: 14px;
+}
+
+.assets-pagination-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.assets-pagination-actions span {
+  color: #334155;
+  font-size: 14px;
+}
+
+.assets-pagination-actions button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: #111827;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.assets-pagination-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 1180px) {
   .assets-hero,
   .assets-upload-panel {
@@ -395,6 +498,22 @@
   .upload-copy h2,
   .assets-table-header h2 {
     font-size: 28px;
+  }
+
+  .assets-table-toolbar {
+    width: 100%;
+  }
+
+  .asset-control,
+  .asset-search-control,
+  .asset-limit-control {
+    width: 100%;
+  }
+
+  .asset-search-control input,
+  .asset-control select,
+  .asset-clear-filters-btn {
+    width: 100%;
   }
 
   .assets-table-shell {
@@ -417,5 +536,9 @@
   .ghost-upload-btn,
   .primary-upload-btn {
     width: 100%;
+  }
+
+  .assets-pagination {
+    align-items: stretch;
   }
 }
