@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from '../pages/Login';
+import Register from '../pages/Register';
 import Assets from '../pages/Assets';
 import MainLayout from '../layout/MainLayout';
 import NotFound from '../pages/NotFound';
@@ -10,6 +11,7 @@ const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route
           element={
             <ProtectedRoute>

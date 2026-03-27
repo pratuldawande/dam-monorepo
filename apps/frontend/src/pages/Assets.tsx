@@ -490,7 +490,6 @@ const Assets = () => {
                     const owner = getAssetOwner(asset);
                     const ownerId = getAssetOwnerId(asset);
                     const isOwner = ownerId === user?.id;
-                    const sharedUsers = asset.sharedWith ?? [];
 
                     return (
                       <tr key={asset._id}>
