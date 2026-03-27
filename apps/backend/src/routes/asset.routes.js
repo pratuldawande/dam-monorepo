@@ -5,6 +5,7 @@ const { validate } = require("../middlewares/validate.middleware");
 const upload = require("../utils/upload");
 const {
   assetListValidator,
+  assetShareValidator,
   assetUploadValidator,
 } = require("../validators/asset.validator");
 
@@ -18,6 +19,7 @@ router.post(
   validate,
   assetController.uploadAssets
 );
+router.post("/:assetId/share", assetShareValidator, validate, assetController.shareAsset);
 router.delete("/:assetId", assetController.deleteAsset);
 
 module.exports = router;

@@ -6,6 +6,10 @@ const assetSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  sharedWith: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }],
   originalName: String,
   filename: String,
   bucket: String,

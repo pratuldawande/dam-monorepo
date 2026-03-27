@@ -3,7 +3,12 @@
  * Handles HTTP requests for login, logout, and registration
  */
 
-const { registerUser, loginUser } = require("../services/auth.service");
+const {
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  listExistingUsers,
+} = require("../services/auth.service");
 
 /**
  * Register a new user
@@ -82,23 +87,26 @@ const logout = (req, res) => {
  */
 const getProfile = async (req, res, next) => {
   try {
-    const User = require("../models/User");
-    const user = await User.findById(req.user.userId);
+    const user = await getCurrentUser(req.user.userId);
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+const listUsers = async (req, res, next) => {
+  try {
+    const users = await listExistingUsers({
+      currentUserId: req.user.userId,
+      search: req.query.search,
+    });
 
     res.status(200).json({
       success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      data: users,
     });
   } catch (error) {
     next(error);
@@ -110,4 +118,5 @@ module.exports = {
   login,
   logout,
   getProfile,
+  listUsers,
 };

@@ -81,6 +81,49 @@ const loginUser = async (email, password) => {
   };
 };
 
+const getCurrentUser = async (userId) => {
+  const user = await User.findById(userId).select("_id name email");
+
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+  };
+};
+
+const listExistingUsers = async ({ currentUserId, search } = {}) => {
+  const filter = {};
+
+  if (currentUserId) {
+    filter._id = { $ne: currentUserId };
+  }
+
+  if (search?.trim()) {
+    const normalizedSearch = search.trim();
+    filter.$or = [
+      { name: { $regex: normalizedSearch, $options: "i" } },
+      { email: { $regex: normalizedSearch, $options: "i" } },
+    ];
+  }
+
+  const users = await User.find(filter)
+    .select("_id name email")
+    .sort({ name: 1, email: 1 })
+    .lean();
+
+  return users.map((user) => ({
+    id: user._id,
+    name: user.name,
+    email: user.email,
+  }));
+};
+
 /**
  * Generate JWT token for user
  * @param {string} userId - User's MongoDB ObjectId
@@ -93,5 +136,7 @@ const generateToken = (userId) => {
 module.exports = {
   registerUser,
   loginUser,
+  getCurrentUser,
+  listExistingUsers,
   generateToken,
 };

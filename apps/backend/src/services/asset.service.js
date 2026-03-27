@@ -5,6 +5,7 @@ const sharp = require("sharp");
 const ffmpeg = require("fluent-ffmpeg");
 const { pipeline } = require("stream/promises");
 const Asset = require("../models/asset");
+const User = require("../models/User");
 const { minioClient } = require("../config/minio");
 const { publishAssetMessage } = require("../config/rabbitmq");
 const {
@@ -313,13 +314,27 @@ const buildAssetListFilter = ({ search, status, type }) => {
   return filter;
 };
 
-const listAssets = async ({ page = 1, limit = 10, search, status, type } = {}) => {
+const listAssets = async ({ page = 1, limit = 10, search, status, type, userId } = {}) => {
   const normalizedPage = Number(page) || 1;
   const normalizedLimit = Number(limit) || 10;
   const filter = buildAssetListFilter({ search, status, type });
 
+  if (userId) {
+    filter.$and = [
+      ...(filter.$and || []),
+      {
+        $or: [
+          { userId },
+          { sharedWith: userId },
+        ],
+      },
+    ];
+  }
+
   const [assets, total] = await Promise.all([
     Asset.find(filter)
+      .populate("userId", "name email")
+      .populate("sharedWith", "name email")
       .sort({ createdAt: -1 })
       .skip((normalizedPage - 1) * normalizedLimit)
       .limit(normalizedLimit)
@@ -372,6 +387,68 @@ const deleteAsset = async ({ assetId, userId }) => {
   return {
     success: true,
     message: "Asset deleted successfully",
+  };
+};
+
+const shareAssetWithUser = async ({ assetId, ownerId, targetUserId }) => {
+  const [asset, userToShare] = await Promise.all([
+    Asset.findById(assetId),
+    User.findById(targetUserId).select("_id name email"),
+  ]);
+
+  if (!asset) {
+    const error = new Error("Asset not found");
+    error.status = 404;
+    throw error;
+  }
+
+  if (asset.userId?.toString() !== ownerId?.toString()) {
+    const error = new Error("You are not allowed to share this asset");
+    error.status = 403;
+    throw error;
+  }
+
+  if (!userToShare) {
+    const error = new Error("Selected user does not exist");
+    error.status = 404;
+    throw error;
+  }
+
+  if (userToShare._id.toString() === ownerId?.toString()) {
+    const error = new Error("You already own this asset");
+    error.status = 400;
+    throw error;
+  }
+
+  const alreadyShared = asset.sharedWith?.some(
+    (sharedUserId) => sharedUserId.toString() === userToShare._id.toString()
+  );
+
+  if (alreadyShared) {
+    const populatedAsset = await Asset.findById(assetId)
+      .populate("userId", "name email")
+      .populate("sharedWith", "name email")
+      .lean();
+
+    return {
+      success: true,
+      message: "Asset already shared with this user",
+      data: populatedAsset,
+    };
+  }
+
+  asset.sharedWith = [...(asset.sharedWith || []), userToShare._id];
+  await asset.save();
+
+  const populatedAsset = await Asset.findById(assetId)
+    .populate("userId", "name email")
+    .populate("sharedWith", "name email")
+    .lean();
+
+  return {
+    success: true,
+    message: "Asset shared successfully",
+    data: populatedAsset,
   };
 };
 
@@ -439,5 +516,6 @@ module.exports = {
   deleteAsset,
   listAssets,
   processAsset,
+  shareAssetWithUser,
   uploadAsset,
 };

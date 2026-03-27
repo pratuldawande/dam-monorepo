@@ -1,8 +1,15 @@
 import API from "./axios";
 
+export interface AssetUserSummary {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 export interface Asset {
   _id: string;
-  userId?: string;
+  userId?: string | AssetUserSummary;
+  sharedWith?: AssetUserSummary[];
   originalName?: string;
   name?: string;
   url?: string;
@@ -62,6 +69,12 @@ export interface DeleteAssetResponse {
   message: string;
 }
 
+export interface ShareAssetResponse {
+  success: boolean;
+  message: string;
+  data: Asset;
+}
+
 export const getAssets = (params?: AssetQueryParams) =>
   API.get<GetAssetsResponse>("/assets", { params }).then((res) => res.data);
 
@@ -77,3 +90,6 @@ export const uploadAssets = (files: File[]) => {
 
 export const deleteAsset = (assetId: string) =>
   API.delete<DeleteAssetResponse>(`/assets/${assetId}`).then((res) => res.data);
+
+export const shareAsset = (assetId: string, userId: string) =>
+  API.post<ShareAssetResponse>(`/assets/${assetId}/share`, { userId }).then((res) => res.data);

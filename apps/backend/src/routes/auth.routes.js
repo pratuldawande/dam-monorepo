@@ -15,8 +15,7 @@ const router = express.Router();
 router.post("/register", createUserValidator, validate, authController.register);
 router.post("/login", loginUserValidator, validate, authController.login);
 router.post("/logout", authMiddleware, authController.logout);
-
-// Protected routes - require valid JWT token
-// router.get("/profile", authMiddleware, authController.getProfile);
+router.get("/me", authMiddleware, authController.getProfile);
+router.get("/users", authMiddleware, authController.listUsers);
 
 module.exports = router;

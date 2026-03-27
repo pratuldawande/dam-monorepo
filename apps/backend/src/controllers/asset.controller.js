@@ -2,7 +2,10 @@ const assetService = require("../services/asset.service");
 
 const listAssets = async (req, res, next) => {
   try {
-    const response = await assetService.listAssets(req.query);
+    const response = await assetService.listAssets({
+      ...req.query,
+      userId: req.user?.userId,
+    });
     res.json(response);
   } catch (err) {
     next(err);
@@ -41,8 +44,23 @@ const deleteAsset = async (req, res, next) => {
   }
 };
 
+const shareAsset = async (req, res, next) => {
+  try {
+    const response = await assetService.shareAssetWithUser({
+      assetId: req.params.assetId,
+      ownerId: req.user?.userId,
+      targetUserId: req.body.userId,
+    });
+
+    res.json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   listAssets,
   deleteAsset,
+  shareAsset,
   uploadAssets,
 };

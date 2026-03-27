@@ -14,7 +14,7 @@ const Sidebar = () => {
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {
-      navigate('/');
+      navigate('/login');
     }
   };
 

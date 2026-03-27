@@ -54,3 +54,11 @@ exports.assetListValidator = [
     .isIn(["image", "video", "other"])
     .withMessage("type must be one of image, video, or other"),
 ];
+
+exports.assetShareValidator = [
+  body("userId")
+    .notEmpty()
+    .withMessage("userId is required")
+    .isMongoId()
+    .withMessage("userId must be a valid user id"),
+];
