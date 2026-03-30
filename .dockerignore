@@ -1,0 +1,8 @@
+node_modules
+.pnpm-store
+.git
+.gitignore
+apps/frontend/dist
+apps/backend/.env
+apps/frontend/.env
+docker-data

@@ -3,8 +3,8 @@
  * Defines schema for user authentication and profile management
  */
 
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
 
 const userSchema = new mongoose.Schema(
   {
@@ -33,27 +33,27 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
-);
+)
 
 /**
  * Hash password before saving to database
  * Only hash if password is new or modified
  */
-userSchema.pre("save", async function (next) {
+userSchema.pre('save', async function (next) {
   // Skip hashing if password hasn't been modified
-  if (!this.isModified("password")) {
-    return next();
+  if (!this.isModified('password')) {
+    return next()
   }
 
   try {
     // Generate salt and hash password with cost factor of 10
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(10)
+    this.password = await bcrypt.hash(this.password, salt)
   } catch (error) {
     // Throw error to be caught by save operation
-    throw error;
+    throw error
   }
-});
+})
 
 /**
  * Compare provided password with stored hashed password
@@ -61,7 +61,7 @@ userSchema.pre("save", async function (next) {
  * @returns {Promise<boolean>} True if passwords match
  */
 userSchema.methods.matchPassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+  return await bcrypt.compare(candidatePassword, this.password)
+}
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model('User', userSchema)

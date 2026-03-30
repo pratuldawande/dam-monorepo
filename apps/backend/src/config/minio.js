@@ -1,4 +1,4 @@
-const Minio = require("minio");
+const Minio = require('minio')
 const {
   MINIO_ACCESS_KEY,
   MINIO_BUCKET,
@@ -6,7 +6,7 @@ const {
   MINIO_PORT,
   MINIO_SECRET_KEY,
   MINIO_USE_SSL,
-} = require("./env");
+} = require('./env')
 
 const minioClient = new Minio.Client({
   endPoint: MINIO_ENDPOINT,
@@ -14,31 +14,31 @@ const minioClient = new Minio.Client({
   useSSL: MINIO_USE_SSL,
   accessKey: MINIO_ACCESS_KEY,
   secretKey: MINIO_SECRET_KEY,
-});
+})
 
 const policy = {
-  Version: "2012-10-17",
+  Version: '2012-10-17',
   Statement: [
     {
-      Action: ["s3:GetObject"],
-      Effect: "Allow",
-      Principal: { AWS: ["*"] },
+      Action: ['s3:GetObject'],
+      Effect: 'Allow',
+      Principal: { AWS: ['*'] },
       Resource: [`arn:aws:s3:::${MINIO_BUCKET}/*`],
     },
   ],
-};
+}
 
 const ensureBucketExists = async () => {
-  const exists = await minioClient.bucketExists(MINIO_BUCKET);
+  const exists = await minioClient.bucketExists(MINIO_BUCKET)
 
   if (!exists) {
-    await minioClient.makeBucket(MINIO_BUCKET, "us-east-1");
-    await minioClient.setBucketPolicy(MINIO_BUCKET, JSON.stringify(policy));
-    
+    await minioClient.makeBucket(MINIO_BUCKET, 'us-east-1')
   }
-};
+
+  await minioClient.setBucketPolicy(MINIO_BUCKET, JSON.stringify(policy))
+}
 
 module.exports = {
   minioClient,
   ensureBucketExists,
-};
+}

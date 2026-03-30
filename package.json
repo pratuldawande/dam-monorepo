@@ -6,10 +6,29 @@
   "scripts": {
     "dev": "pnpm --parallel dev",
     "build": "pnpm --parallel build",
-    "start": "pnpm --parallel start"
+    "start": "pnpm --parallel start",
+    "lint": "pnpm --filter frontend lint && pnpm --filter backend lint",
+    "lint:fix": "pnpm --filter frontend lint:fix && pnpm --filter backend lint:fix",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.30.0"
+  "packageManager": "pnpm@10.30.0",
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1"
+  },
+  "lint-staged": {
+    "{package.json,pnpm-lock.yaml,pnpm-workspace.yaml,README.md,docker-compose.yml,.prettierrc.json}": "prettier --write",
+    "apps/**/*.{js,cjs,mjs,jsx,ts,tsx,json,md,yml,yaml,css,scss,html}": "prettier --write",
+    "apps/frontend/**/*.{js,jsx,ts,tsx}": "pnpm --filter frontend exec eslint --fix --max-warnings=0",
+    "apps/backend/**/*.{js,cjs,mjs}": "pnpm --filter backend exec eslint --fix --max-warnings=0"
+  }
 }

@@ -3,9 +3,9 @@
  * Handles user registration, login, and token generation
  */
 
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const { JWT_SECRET, JWT_EXPIRE } = require("../config/env");
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
+const { JWT_SECRET, JWT_EXPIRE } = require('../config/env')
 
 /**
  * Register a new user
@@ -17,19 +17,19 @@ const { JWT_SECRET, JWT_EXPIRE } = require("../config/env");
  */
 const registerUser = async (name, email, password) => {
   // Check if user already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email })
   if (existingUser) {
-    const error = new Error("Email already registered");
-    error.status = 404;
-    throw error;
+    const error = new Error('Email already registered')
+    error.status = 404
+    throw error
   }
 
   // Create new user (password will be hashed in pre-save hook)
-  const user = new User({ name, email, password });
-  await user.save();
+  const user = new User({ name, email, password })
+  await user.save()
 
   // Generate JWT token
-  const token = generateToken(user._id);
+  const token = generateToken(user._id)
 
   return {
     user: {
@@ -38,8 +38,8 @@ const registerUser = async (name, email, password) => {
       email: user.email,
     },
     token,
-  };
-};
+  }
+}
 
 /**
  * Login user with email and password
@@ -50,26 +50,26 @@ const registerUser = async (name, email, password) => {
  */
 const loginUser = async (email, password) => {
   // Fetch user including password field (normally excluded)
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select('+password')
 
   if (!user) {
-    const error = new Error("Invalid email or password");
-    error.status = 404;
-    throw error;
+    const error = new Error('Invalid email or password')
+    error.status = 404
+    throw error
   }
 
   // Verify password matches stored hash
-  const isPasswordValid = await user.matchPassword(password);
+  const isPasswordValid = await user.matchPassword(password)
 
   if (!isPasswordValid) {
     // throw new Error("Invalid email or password");
-    const error = new Error("Invalid email or password");
-    error.status = 404;
-    throw error;
+    const error = new Error('Invalid email or password')
+    error.status = 404
+    throw error
   }
 
   // Generate JWT token
-  const token = generateToken(user._id);
+  const token = generateToken(user._id)
 
   return {
     user: {
@@ -78,51 +78,48 @@ const loginUser = async (email, password) => {
       email: user.email,
     },
     token,
-  };
-};
+  }
+}
 
 const getCurrentUser = async (userId) => {
-  const user = await User.findById(userId).select("_id name email");
+  const user = await User.findById(userId).select('_id name email')
 
   if (!user) {
-    const error = new Error("User not found");
-    error.status = 404;
-    throw error;
+    const error = new Error('User not found')
+    error.status = 404
+    throw error
   }
 
   return {
     id: user._id,
     name: user.name,
     email: user.email,
-  };
-};
+  }
+}
 
 const listExistingUsers = async ({ currentUserId, search } = {}) => {
-  const filter = {};
+  const filter = {}
 
   if (currentUserId) {
-    filter._id = { $ne: currentUserId };
+    filter._id = { $ne: currentUserId }
   }
 
   if (search?.trim()) {
-    const normalizedSearch = search.trim();
+    const normalizedSearch = search.trim()
     filter.$or = [
-      { name: { $regex: normalizedSearch, $options: "i" } },
-      { email: { $regex: normalizedSearch, $options: "i" } },
-    ];
+      { name: { $regex: normalizedSearch, $options: 'i' } },
+      { email: { $regex: normalizedSearch, $options: 'i' } },
+    ]
   }
 
-  const users = await User.find(filter)
-    .select("_id name email")
-    .sort({ name: 1, email: 1 })
-    .lean();
+  const users = await User.find(filter).select('_id name email').sort({ name: 1, email: 1 }).lean()
 
   return users.map((user) => ({
     id: user._id,
     name: user.name,
     email: user.email,
-  }));
-};
+  }))
+}
 
 /**
  * Generate JWT token for user
@@ -130,8 +127,8 @@ const listExistingUsers = async ({ currentUserId, search } = {}) => {
  * @returns {string} Signed JWT token
  */
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
-};
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRE })
+}
 
 module.exports = {
   registerUser,
@@ -139,4 +136,4 @@ module.exports = {
   getCurrentUser,
   listExistingUsers,
   generateToken,
-};
+}

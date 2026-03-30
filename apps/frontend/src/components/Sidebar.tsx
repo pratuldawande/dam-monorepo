@@ -1,30 +1,30 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import '../styles/sidebar.css';
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
+import '../styles/sidebar.css'
 
 const Sidebar = () => {
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
-  const { logout, logoutLoading, user } = useAuth();
+  const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false)
+  const { logout, logoutLoading, user } = useAuth()
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await logout()
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout failed:', error)
     } finally {
-      navigate('/login');
+      navigate('/login')
     }
-  };
+  }
 
   const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   const closeSidebar = () => {
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   return (
     <>
@@ -42,11 +42,7 @@ const Sidebar = () => {
           {user && <p className="sidebar-link">{user.name}</p>}
 
           <nav>
-            <NavLink
-              to="/assets"
-              className="sidebar-link"
-              onClick={closeSidebar}
-            >
+            <NavLink to="/assets" className="sidebar-link" onClick={closeSidebar}>
               Assets
             </NavLink>
           </nav>
@@ -59,7 +55,7 @@ const Sidebar = () => {
         </div>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar
