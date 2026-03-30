@@ -38,7 +38,24 @@ const getAssetPreview = (asset: Asset) => {
     return asset.url
   }
 
-  return asset.metadata?.thumbnails?.[0]?.url || asset.url
+  return asset.metadata?.thumbnails?.[0]?.url
+}
+
+const getAssetPlaceholder = (asset: Asset) => {
+  const normalizedType = (asset.type || '').toLowerCase()
+  const isImage = normalizedType.startsWith('image/')
+  const isVideo = normalizedType.startsWith('video/')
+
+  const label = isImage ? 'IMAGE' : isVideo ? 'VIDEO' : 'FILE'
+  const bgStart = isImage ? '#0ea5e9' : isVideo ? '#f97316' : '#64748b'
+  const bgEnd = isImage ? '#2563eb' : isVideo ? '#dc2626' : '#334155'
+  const badge = isImage ? '#dbeafe' : isVideo ? '#ffedd5' : '#e2e8f0'
+  const badgeText = isImage ? '#1d4ed8' : isVideo ? '#c2410c' : '#334155'
+  const icon = isImage ? 'IMG' : isVideo ? 'VID' : 'DOC'
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="${bgStart}"/><stop offset="100%" stop-color="${bgEnd}"/></linearGradient></defs><rect width="320" height="180" fill="url(#bg)"/><rect x="20" y="20" width="84" height="30" rx="15" fill="${badge}"/><text x="62" y="40" text-anchor="middle" font-size="14" font-family="Arial, sans-serif" font-weight="700" fill="${badgeText}">${icon}</text><text x="160" y="102" text-anchor="middle" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#ffffff">${label}</text></svg>`
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
 
 const getAssetOwner = (asset: Asset) => {
@@ -486,6 +503,7 @@ const Assets = () => {
                 ) : (
                   assets.map((asset) => {
                     const previewUrl = getAssetPreview(asset)
+                    const fallbackPreview = getAssetPlaceholder(asset)
                     const thumbnailCount = asset.metadata?.thumbnails?.length ?? 0
                     const variantCount = asset.metadata?.variants?.length ?? 0
                     const owner = getAssetOwner(asset)
@@ -496,11 +514,14 @@ const Assets = () => {
                       <tr key={asset._id}>
                         <td data-label="Preview">
                           <div className="asset-preview-frame">
-                            {previewUrl ? (
-                              <img src={previewUrl} alt={asset.originalName || 'Asset preview'} />
-                            ) : (
-                              <span>No preview</span>
-                            )}
+                            <img
+                              src={previewUrl || fallbackPreview}
+                              alt={asset.originalName || 'Asset preview'}
+                              onError={(event) => {
+                                event.currentTarget.onerror = null
+                                event.currentTarget.src = fallbackPreview
+                              }}
+                            />
                           </div>
                         </td>
                         <td data-label="Name">

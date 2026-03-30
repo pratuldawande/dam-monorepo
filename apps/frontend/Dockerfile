@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/frontend/package.json apps/frontend/package.json
 
-RUN pnpm install --filter frontend... --frozen-lockfile
+RUN pnpm install --filter frontend... --frozen-lockfile --prod=false
 
 COPY apps/frontend apps/frontend
 
