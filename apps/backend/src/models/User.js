@@ -3,8 +3,8 @@
  * Defines schema for user authentication and profile management
  */
 
-const mongoose = require('mongoose')
-const bcrypt = require('bcryptjs')
+import * as bcrypt from 'bcryptjs'
+import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema(
   {
@@ -64,4 +64,4 @@ userSchema.methods.matchPassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password)
 }
 
-module.exports = mongoose.model('User', userSchema)
+export default mongoose.model('User', userSchema)

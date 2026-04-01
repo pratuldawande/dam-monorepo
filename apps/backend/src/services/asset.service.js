@@ -1,20 +1,20 @@
-const fs = require('fs')
-const path = require('path')
-const os = require('os')
-const sharp = require('sharp')
-const ffmpeg = require('fluent-ffmpeg')
-const { pipeline } = require('stream/promises')
-const Asset = require('../models/asset')
-const User = require('../models/User')
-const { minioClient } = require('../config/minio')
-const { publishAssetMessage } = require('../config/rabbitmq')
-const {
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import { pipeline } from 'stream/promises'
+import ffmpeg from 'fluent-ffmpeg'
+import sharp from 'sharp'
+import {
   MINIO_BUCKET,
   MINIO_ENDPOINT,
   MINIO_PORT,
   MINIO_PUBLIC_BASE_URL,
   MINIO_USE_SSL,
-} = require('../config/env')
+} from '@/config/env'
+import { minioClient } from '@/config/minio'
+import { publishAssetMessage } from '@/config/rabbitmq'
+import User from '@/models/User'
+import Asset from '@/models/asset'
 
 const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '')
 
@@ -248,7 +248,7 @@ const removeObjectIfExists = async (objectName) => {
   }
 }
 
-const uploadAsset = async ({ file, userId }) => {
+const uploadFileToStorage = async ({ file, userId }) => {
   const objectName = buildObjectName(file.originalname)
   const metaData = {
     'Content-Type': file.mimetype,
@@ -257,37 +257,73 @@ const uploadAsset = async ({ file, userId }) => {
     const stream = fs.createReadStream(file.path)
     await minioClient.putObject(MINIO_BUCKET, objectName, stream, file.size, metaData)
 
-    const asset = await Asset.create({
-      userId,
-      originalName: file.originalname,
-      filename: objectName,
-      bucket: MINIO_BUCKET,
-      url: buildObjectUrl(objectName),
-      type: file.mimetype,
-      size: file.size,
-      tags: [file.mimetype.split('/')[0]],
-      metadata: {
-        fieldName: file.fieldname,
+    return {
+      document: {
+        userId,
+        originalName: file.originalname,
+        filename: objectName,
+        bucket: MINIO_BUCKET,
+        url: buildObjectUrl(objectName),
+        type: file.mimetype,
+        size: file.size,
+        tags: [file.mimetype.split('/')[0]],
+        metadata: {
+          fieldName: file.fieldname,
+        },
+        status: 'queued',
       },
-      status: 'queued',
-    })
-
-    await publishAssetMessage({
-      assetId: asset._id.toString(),
-      userId: userId.toString(),
-      bucket: MINIO_BUCKET,
-      objectName,
-      mimeType: file.mimetype,
-      originalName: file.originalname,
-      size: file.size,
-    })
-
-    return asset
+      message: {
+        userId: userId.toString(),
+        bucket: MINIO_BUCKET,
+        objectName,
+        mimeType: file.mimetype,
+        originalName: file.originalname,
+        size: file.size,
+      },
+    }
   } finally {
     if (file.path) {
       fs.promises.unlink(file.path).catch(() => {})
     }
   }
+}
+
+const uploadAssets = async ({ files, userId }) => {
+  if (!files?.length) {
+    return []
+  }
+
+  let stagedUploads = []
+  let createdAssets = []
+
+  try {
+    stagedUploads = await Promise.all(files.map((file) => uploadFileToStorage({ file, userId })))
+    createdAssets = await Asset.insertMany(stagedUploads.map(({ document }) => document))
+
+    await Promise.all(
+      createdAssets.map((asset, index) =>
+        publishAssetMessage({
+          assetId: asset._id.toString(),
+          ...stagedUploads[index].message,
+        })
+      )
+    )
+
+    return createdAssets
+  } catch (error) {
+    await Promise.all([
+      ...stagedUploads.map(({ document }) => removeObjectIfExists(document.filename)),
+      ...createdAssets.map((asset) => Asset.findByIdAndDelete(asset._id)),
+    ])
+
+    throw error
+  }
+}
+
+const uploadAsset = async ({ file, userId }) => {
+  const [asset] = await uploadAssets({ files: [file], userId })
+
+  return asset
 }
 
 const buildAssetListFilter = ({ search, status, type }) => {
@@ -513,10 +549,4 @@ const processAsset = async ({ assetId }) => {
   }
 }
 
-module.exports = {
-  deleteAsset,
-  listAssets,
-  processAsset,
-  shareAssetWithUser,
-  uploadAsset,
-}
+export { deleteAsset, listAssets, processAsset, shareAssetWithUser, uploadAsset, uploadAssets }

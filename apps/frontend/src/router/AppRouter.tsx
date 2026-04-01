@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Login from '../pages/Login'
-import Register from '../pages/Register'
-import Assets from '../pages/Assets'
-import MainLayout from '../layout/MainLayout'
-import NotFound from '../pages/NotFound'
-import ProtectedRoute from '../components/ProtectedRoute'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import MainLayout from '@/layout/MainLayout'
+import Assets from '@/pages/Assets'
+import Login from '@/pages/Login'
+import NotFound from '@/pages/NotFound'
+import Register from '@/pages/Register'
 
 const AppRouter = () => {
   return (

@@ -1,7 +1,7 @@
-const { body, query } = require('express-validator')
-const { MAX_FILE_SIZE_BYTES } = require('../config/env')
+import { body, query } from 'express-validator'
+import { MAX_FILE_SIZE_BYTES } from '@/config/env'
 
-exports.assetUploadValidator = [
+const assetUploadValidator = [
   body('_assetUpload').custom((_, { req }) => {
     const files = req.files || []
 
@@ -29,7 +29,7 @@ exports.assetUploadValidator = [
   }),
 ]
 
-exports.assetListValidator = [
+const assetListValidator = [
   query('page')
     .optional()
     .isInt({ min: 1 })
@@ -51,10 +51,12 @@ exports.assetListValidator = [
     .withMessage('type must be one of image, video, or other'),
 ]
 
-exports.assetShareValidator = [
+const assetShareValidator = [
   body('userId')
     .notEmpty()
     .withMessage('userId is required')
     .isMongoId()
     .withMessage('userId must be a valid user id'),
 ]
+
+export { assetUploadValidator, assetListValidator, assetShareValidator }

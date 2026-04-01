@@ -1,12 +1,13 @@
-const express = require('express')
+import express from 'express'
+import assetRoutes from '@/routes/asset.routes'
+import authRoutes from '@/routes/auth.routes'
+
 const router = express.Router()
-const authRoutes = require('./auth.routes')
-const asset = require('./asset.routes')
 
 // Mount authentication routes
 router.use('/auth', authRoutes)
 
 // Mount project-related routes
-router.use('/assets', asset)
+router.use('/assets', assetRoutes)
 
-module.exports = router
+export default router

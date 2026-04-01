@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { useAuth } from '../hooks/useAuth'
-import '../styles/sidebar.css'
+import { useAuth } from '@/hooks/useAuth'
+import '@/styles/sidebar.css'
 
 const Sidebar = () => {
   const navigate = useNavigate()

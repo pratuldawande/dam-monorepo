@@ -1,4 +1,4 @@
-import API from './axios'
+import API from '@/api/axios'
 
 export interface AuthUser {
   id: string

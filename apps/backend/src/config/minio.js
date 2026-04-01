@@ -1,12 +1,12 @@
-const Minio = require('minio')
-const {
+import * as Minio from 'minio'
+import {
   MINIO_ACCESS_KEY,
   MINIO_BUCKET,
   MINIO_ENDPOINT,
   MINIO_PORT,
   MINIO_SECRET_KEY,
   MINIO_USE_SSL,
-} = require('./env')
+} from '@/config/env'
 
 const minioClient = new Minio.Client({
   endPoint: MINIO_ENDPOINT,
@@ -28,7 +28,7 @@ const policy = {
   ],
 }
 
-const ensureBucketExists = async () => {
+export const ensureBucketExists = async () => {
   const exists = await minioClient.bucketExists(MINIO_BUCKET)
 
   if (!exists) {
@@ -38,7 +38,4 @@ const ensureBucketExists = async () => {
   await minioClient.setBucketPolicy(MINIO_BUCKET, JSON.stringify(policy))
 }
 
-module.exports = {
-  minioClient,
-  ensureBucketExists,
-}
+export { minioClient }

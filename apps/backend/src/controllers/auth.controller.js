@@ -3,12 +3,7 @@
  * Handles HTTP requests for login, logout, and registration
  */
 
-const {
-  registerUser,
-  loginUser,
-  getCurrentUser,
-  listExistingUsers,
-} = require('../services/auth.service')
+import { registerUser, loginUser, getCurrentUser, listExistingUsers } from '@/services/auth.service'
 
 /**
  * Register a new user
@@ -113,10 +108,4 @@ const listUsers = async (req, res, next) => {
   }
 }
 
-module.exports = {
-  register,
-  login,
-  logout,
-  getProfile,
-  listUsers,
-}
+export { register, login, logout, getProfile, listUsers }

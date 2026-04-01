@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import '../styles/login.css'
+import { useAuth } from '@/hooks/useAuth'
+import { getAuthErrorMessage, validateEmail } from '@/utils/auth'
+import '@/styles/login.css'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -19,21 +19,6 @@ const Login = () => {
       navigate('/assets')
     }
   }, [isAuthenticated, navigate])
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
-
-  const getErrorMessage = (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.message
-      const validationError = error.response?.data?.errors?.[0]?.msg
-      return message || validationError || 'Login failed'
-    }
-
-    return error instanceof Error ? error.message : 'Login failed'
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +48,7 @@ const Login = () => {
       await login({ email, password })
       navigate('/assets')
     } catch (error) {
-      setApiError(getErrorMessage(error))
+      setApiError(getAuthErrorMessage(error, 'Login failed'))
     }
   }
 

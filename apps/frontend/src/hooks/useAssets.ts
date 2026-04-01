@@ -5,7 +5,7 @@ import {
   shareAsset,
   uploadAssets,
   type AssetQueryParams,
-} from '../api/asset.api'
+} from '@/api/asset.api'
 
 export const useAssets = (params?: AssetQueryParams) => {
   const queryClient = useQueryClient()

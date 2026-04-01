@@ -1,7 +1,7 @@
-const mongoose = require('mongoose')
-const { MONGO_URI } = require('./env')
+import mongoose from 'mongoose'
+import { MONGO_URI } from '@/config/env'
 
-exports.connectDB = async () => {
+export const connectDB = async () => {
   await mongoose.connect(MONGO_URI)
   console.log('MongoDB connected')
 }

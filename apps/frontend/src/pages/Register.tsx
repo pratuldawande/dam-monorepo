@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import '../styles/login.css'
+import { useAuth } from '@/hooks/useAuth'
+import { getAuthErrorMessage, validateEmail } from '@/utils/auth'
+import '@/styles/login.css'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -23,18 +23,6 @@ const Register = () => {
       navigate('/assets')
     }
   }, [isAuthenticated, navigate])
-
-  const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-
-  const getErrorMessage = (error: unknown) => {
-    if (axios.isAxiosError(error)) {
-      const message = error.response?.data?.message
-      const validationError = error.response?.data?.errors?.[0]?.msg
-      return message || validationError || 'Registration failed'
-    }
-
-    return error instanceof Error ? error.message : 'Registration failed'
-  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -89,7 +77,7 @@ const Register = () => {
       })
       navigate('/assets')
     } catch (error) {
-      setApiError(getErrorMessage(error))
+      setApiError(getAuthErrorMessage(error, 'Registration failed'))
     }
   }
 

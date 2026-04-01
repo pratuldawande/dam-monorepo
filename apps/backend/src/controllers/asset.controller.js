@@ -1,4 +1,4 @@
-const assetService = require('../services/asset.service')
+import * as assetService from '@/services/asset.service'
 
 const listAssets = async (req, res, next) => {
   try {
@@ -17,9 +17,7 @@ const uploadAssets = async (req, res, next) => {
     const files = req.files || []
     const userId = req.user?.userId
 
-    const uploads = await Promise.all(
-      files.map((file) => assetService.uploadAsset({ file, userId }))
-    )
+    const uploads = await assetService.uploadAssets({ files, userId })
 
     res.json({
       success: true,
@@ -58,9 +56,4 @@ const shareAsset = async (req, res, next) => {
   }
 }
 
-module.exports = {
-  listAssets,
-  deleteAsset,
-  shareAsset,
-  uploadAssets,
-}
+export { listAssets, deleteAsset, shareAsset, uploadAssets }

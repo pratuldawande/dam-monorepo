@@ -3,9 +3,9 @@
  * Handles user registration, login, and token generation
  */
 
-const jwt = require('jsonwebtoken')
-const User = require('../models/User')
-const { JWT_SECRET, JWT_EXPIRE } = require('../config/env')
+import * as jwt from 'jsonwebtoken'
+import { JWT_EXPIRE, JWT_SECRET } from '@/config/env'
+import User from '@/models/User'
 
 /**
  * Register a new user
@@ -130,10 +130,4 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRE })
 }
 
-module.exports = {
-  registerUser,
-  loginUser,
-  getCurrentUser,
-  listExistingUsers,
-  generateToken,
-}
+export { registerUser, loginUser, getCurrentUser, listExistingUsers, generateToken }

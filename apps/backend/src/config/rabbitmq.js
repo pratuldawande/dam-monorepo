@@ -1,10 +1,10 @@
-const amqp = require('amqplib')
-const { RABBITMQ_ASSET_QUEUE, RABBITMQ_URL } = require('./env')
+import * as amqp from 'amqplib'
+import { RABBITMQ_ASSET_QUEUE, RABBITMQ_URL } from '@/config/env'
 
 let connectionPromise
 let channelPromise
 
-const connectRabbitMQ = async () => {
+export const connectRabbitMQ = async () => {
   if (!connectionPromise) {
     connectionPromise = amqp.connect(RABBITMQ_URL)
   }
@@ -12,7 +12,7 @@ const connectRabbitMQ = async () => {
   return connectionPromise
 }
 
-const getChannel = async () => {
+export const getChannel = async () => {
   if (!channelPromise) {
     channelPromise = connectRabbitMQ().then(async (connection) => {
       const channel = await connection.createChannel()
@@ -24,7 +24,7 @@ const getChannel = async () => {
   return channelPromise
 }
 
-const publishAssetMessage = async (message) => {
+export const publishAssetMessage = async (message) => {
   const channel = await getChannel()
 
   channel.sendToQueue(RABBITMQ_ASSET_QUEUE, Buffer.from(JSON.stringify(message)), {
@@ -32,7 +32,7 @@ const publishAssetMessage = async (message) => {
   })
 }
 
-const startAssetConsumer = async (handler) => {
+export const startAssetConsumer = async (handler) => {
   const channel = await getChannel()
   await channel.prefetch(1)
 
@@ -50,11 +50,4 @@ const startAssetConsumer = async (handler) => {
       channel.nack(message, false, false)
     }
   })
-}
-
-module.exports = {
-  connectRabbitMQ,
-  getChannel,
-  publishAssetMessage,
-  startAssetConsumer,
 }

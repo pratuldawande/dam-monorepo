@@ -1,4 +1,5 @@
-require('dotenv').config()
+import 'dotenv/config'
+
 const env = {
   PORT: process.env.PORT || 5000,
   MONGO_URI: process.env.MONGO_URI || 'mongodb://mongo:27017/dam',
@@ -17,4 +18,22 @@ const env = {
   JWT_EXPIRE: process.env.JWT_EXPIRE || '7d',
 }
 
-module.exports = env
+export const {
+  PORT,
+  MONGO_URI,
+  MINIO_ENDPOINT,
+  MINIO_PORT,
+  MINIO_USE_SSL,
+  MINIO_ACCESS_KEY,
+  MINIO_SECRET_KEY,
+  MINIO_BUCKET,
+  MINIO_PUBLIC_BASE_URL,
+  RABBITMQ_URL,
+  RABBITMQ_ASSET_QUEUE,
+  MAX_FILE_SIZE_BYTES,
+  UPLOAD_TMP_DIR,
+  JWT_SECRET,
+  JWT_EXPIRE,
+} = env
+
+export default env

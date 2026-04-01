@@ -1,13 +1,13 @@
-const express = require('express')
-const assetController = require('../controllers/asset.controller')
-const authMiddleware = require('../middlewares/auth.middleware')
-const { validate } = require('../middlewares/validate.middleware')
-const upload = require('../utils/upload')
-const {
+import express from 'express'
+import * as assetController from '@/controllers/asset.controller'
+import authMiddleware from '@/middlewares/auth.middleware'
+import { validate } from '@/middlewares/validate.middleware'
+import upload from '@/utils/upload'
+import {
   assetListValidator,
   assetShareValidator,
   assetUploadValidator,
-} = require('../validators/asset.validator')
+} from '@/validators/asset.validator'
 
 const router = express.Router()
 router.use(authMiddleware)
@@ -22,4 +22,4 @@ router.post(
 router.post('/:assetId/share', assetShareValidator, validate, assetController.shareAsset)
 router.delete('/:assetId', assetController.deleteAsset)
 
-module.exports = router
+export default router

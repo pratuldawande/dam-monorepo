@@ -1,6 +1,6 @@
-const multer = require('multer')
-const { MAX_FILE_SIZE_BYTES, UPLOAD_TMP_DIR } = require('../config/env')
-const fs = require('fs')
+import fs from 'fs'
+import multer from 'multer'
+import { MAX_FILE_SIZE_BYTES, UPLOAD_TMP_DIR } from '@/config/env'
 
 if (!fs.existsSync(UPLOAD_TMP_DIR)) {
   fs.mkdirSync(UPLOAD_TMP_DIR)
@@ -13,7 +13,7 @@ const storage = multer.diskStorage({
   },
 })
 
-module.exports = multer({
+export default multer({
   storage,
   limits: {
     fileSize: MAX_FILE_SIZE_BYTES,

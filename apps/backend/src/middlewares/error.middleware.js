@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-unused-vars
-module.exports = (err, req, res, next) => {
+const errorMiddleware = (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({
       success: false,
@@ -12,3 +12,5 @@ module.exports = (err, req, res, next) => {
     message: err.message || 'Internal Server Error',
   })
 }
+
+export default errorMiddleware

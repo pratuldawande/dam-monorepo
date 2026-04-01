@@ -1,8 +1,6 @@
-// validators/userValidator.js
+import { body } from 'express-validator' //zod
 
-const { body } = require('express-validator')
-
-exports.createUserValidator = [
+const createUserValidator = [
   body('name').notEmpty().withMessage('Name required'),
   body('email').notEmpty().withMessage('Email is required').isEmail().withMessage('Invalid email'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
@@ -14,7 +12,7 @@ exports.createUserValidator = [
   }),
 ]
 
-exports.loginUserValidator = [
+const loginUserValidator = [
   body('email')
     .notEmpty()
     .withMessage('Email is required')
@@ -27,3 +25,5 @@ exports.loginUserValidator = [
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters'),
 ]
+
+export { createUserValidator, loginUserValidator }

@@ -1,6 +1,6 @@
-import AppRouter from './router/AppRouter'
-import ErrorBoundary from './components/ErrorBoundary'
-import QueryProvider from './providers/QueryProvider'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import QueryProvider from '@/providers/QueryProvider'
+import AppRouter from '@/router/AppRouter'
 
 function App() {
   return (

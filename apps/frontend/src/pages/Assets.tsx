@@ -1,78 +1,26 @@
-import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { type Asset } from '../api/asset.api'
-import { getExistingUsers, type ExistingUser } from '../api/auth.api'
-import { useAssets } from '../hooks/useAssets'
-import { useAuth } from '../hooks/useAuth'
-import '../styles/assets.css'
-
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
-
-const formatBytes = (bytes?: number) => {
-  if (!bytes) {
-    return '0 B'
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB']
-  let value = bytes
-  let unitIndex = 0
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value /= 1024
-    unitIndex += 1
-  }
-
-  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
-}
-
-const formatDate = (value?: string) => {
-  if (!value) {
-    return 'NA'
-  }
-
-  return new Date(value).toLocaleString()
-}
-
-const getAssetPreview = (asset: Asset) => {
-  if (asset.type?.startsWith('image/')) {
-    return asset.url
-  }
-
-  return asset.metadata?.thumbnails?.[0]?.url
-}
-
-const getAssetPlaceholder = (asset: Asset) => {
-  const normalizedType = (asset.type || '').toLowerCase()
-  const isImage = normalizedType.startsWith('image/')
-  const isVideo = normalizedType.startsWith('video/')
-
-  const label = isImage ? 'IMAGE' : isVideo ? 'VIDEO' : 'FILE'
-  const bgStart = isImage ? '#0ea5e9' : isVideo ? '#f97316' : '#64748b'
-  const bgEnd = isImage ? '#2563eb' : isVideo ? '#dc2626' : '#334155'
-  const badge = isImage ? '#dbeafe' : isVideo ? '#ffedd5' : '#e2e8f0'
-  const badgeText = isImage ? '#1d4ed8' : isVideo ? '#c2410c' : '#334155'
-  const icon = isImage ? 'IMG' : isVideo ? 'VID' : 'DOC'
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="${bgStart}"/><stop offset="100%" stop-color="${bgEnd}"/></linearGradient></defs><rect width="320" height="180" fill="url(#bg)"/><rect x="20" y="20" width="84" height="30" rx="15" fill="${badge}"/><text x="62" y="40" text-anchor="middle" font-size="14" font-family="Arial, sans-serif" font-weight="700" fill="${badgeText}">${icon}</text><text x="160" y="102" text-anchor="middle" font-size="30" font-family="Arial, sans-serif" font-weight="700" fill="#ffffff">${label}</text></svg>`
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
-}
-
-const getAssetOwner = (asset: Asset) => {
-  if (asset.userId && typeof asset.userId === 'object') {
-    return asset.userId
-  }
-
-  return undefined
-}
-
-const getAssetOwnerId = (asset: Asset) => {
-  if (asset.userId && typeof asset.userId === 'object') {
-    return asset.userId._id
-  }
-
-  return asset.userId
-}
+import { getExistingUsers, type ExistingUser } from '@/api/auth.api'
+import { useAssets } from '@/hooks/useAssets'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  PAGE_SIZE_OPTIONS,
+  formatBytes,
+  formatDate,
+  getAssetOwner,
+  getAssetOwnerId,
+  getAssetPlaceholder,
+  getAssetPreview,
+} from '@/utils/assets'
+import '@/styles/assets.css'
 
 const Assets = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -90,6 +38,16 @@ const Assets = () => {
   const [shareError, setShareError] = useState<Record<string, string>>({})
   const inputRef = useRef<HTMLInputElement | null>(null)
   const { user } = useAuth()
+  const assetQueryParams = useMemo(
+    () => ({
+      page,
+      limit,
+      search: search || undefined,
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      type: typeFilter === 'all' ? undefined : typeFilter,
+    }),
+    [limit, page, search, statusFilter, typeFilter]
+  )
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -117,27 +75,24 @@ const Assets = () => {
     uploadMutation,
     deleteMutation,
     shareMutation,
-  } = useAssets({
-    page,
-    limit,
-    search: search || undefined,
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    type: typeFilter === 'all' ? undefined : typeFilter,
-  })
+  } = useAssets(assetQueryParams)
   const usersQuery = useQuery({
     queryKey: ['existing-users', shareSearch],
     queryFn: () => getExistingUsers(shareSearch),
     enabled: Boolean(shareAssetId),
   })
 
-  const assets = data?.data ?? []
+  const assets = useMemo(() => data?.data ?? [], [data])
   const meta = data?.meta
-  const existingUsers = usersQuery.data?.data ?? []
+  const existingUsers = useMemo(() => usersQuery.data?.data ?? [], [usersQuery.data])
   const totalAssets = meta?.total ?? 0
   const currentPage = meta?.page ?? page
   const currentLimit = meta?.limit ?? limit
   const totalPages = meta?.totalPages ?? 0
-  const hasFilters = Boolean(search) || statusFilter !== 'all' || typeFilter !== 'all'
+  const hasFilters = useMemo(
+    () => Boolean(search) || statusFilter !== 'all' || typeFilter !== 'all',
+    [search, statusFilter, typeFilter]
+  )
 
   useEffect(() => {
     if (!meta) {
@@ -154,7 +109,7 @@ const Assets = () => {
     }
   }, [meta, page, totalPages])
 
-  const mergeFiles = (incomingFiles: File[]) => {
+  const mergeFiles = useCallback((incomingFiles: File[]) => {
     setSelectedFiles((currentFiles) => {
       const nextFiles = [...currentFiles]
 
@@ -173,56 +128,65 @@ const Assets = () => {
 
       return nextFiles
     })
-  }
+  }, [])
 
-  const handleFileSelection = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    mergeFiles(files)
-    event.target.value = ''
-  }
+  const handleFileSelection = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || [])
+      mergeFiles(files)
+      event.target.value = ''
+    },
+    [mergeFiles]
+  )
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    setIsDragging(false)
-    mergeFiles(Array.from(event.dataTransfer.files || []))
-  }
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault()
+      setIsDragging(false)
+      mergeFiles(Array.from(event.dataTransfer.files || []))
+    },
+    [mergeFiles]
+  )
 
-  const handleUpload = async () => {
+  const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0 || uploadMutation.isPending) {
       return
     }
 
     await uploadMutation.mutateAsync(selectedFiles)
     setSelectedFiles([])
-  }
+  }, [selectedFiles, uploadMutation])
 
-  const removeSelectedFile = (indexToRemove: number) => {
+  const removeSelectedFile = useCallback((indexToRemove: number) => {
     setSelectedFiles((currentFiles) => currentFiles.filter((_, index) => index !== indexToRemove))
-  }
+  }, [])
 
-  const handleDelete = async (assetId: string) => {
-    if (deleteMutation.isPending) {
-      return
-    }
+  const handleDelete = useCallback(
+    async (assetId: string) => {
+      if (deleteMutation.isPending) {
+        return
+      }
 
-    const confirmed = window.confirm('Delete this asset and its generated files?')
+      const confirmed = window.confirm('Delete this asset and its generated files?')
 
-    if (!confirmed) {
-      return
-    }
+      if (!confirmed) {
+        return
+      }
 
-    await deleteMutation.mutateAsync(assetId)
-  }
+      await deleteMutation.mutateAsync(assetId)
+    },
+    [deleteMutation]
+  )
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setSearchInput('')
     setSearch('')
     setStatusFilter('all')
     setTypeFilter('all')
     setPage(1)
-  }
+  }, [])
 
-  const openSharePicker = (assetId: string) => {
+  const openSharePicker = useCallback((assetId: string) => {
     setShareAssetId(assetId)
     setShareSearchInput('')
     setShareSearch('')
@@ -230,44 +194,47 @@ const Assets = () => {
       ...current,
       [assetId]: '',
     }))
-  }
+  }, [])
 
-  const closeSharePicker = () => {
+  const closeSharePicker = useCallback(() => {
     setShareAssetId(null)
     setShareSearchInput('')
     setShareSearch('')
-  }
+  }, [])
 
-  const handleShare = async (assetId: string, targetUser: ExistingUser) => {
-    if (shareMutation.isPending) {
-      return
-    }
+  const handleShare = useCallback(
+    async (assetId: string, targetUser: ExistingUser) => {
+      if (shareMutation.isPending) {
+        return
+      }
 
-    try {
-      const response = await shareMutation.mutateAsync({ assetId, userId: targetUser.id })
+      try {
+        const response = await shareMutation.mutateAsync({ assetId, userId: targetUser.id })
 
-      setShareFeedback((current) => ({
-        ...current,
-        [assetId]: response.message || 'Asset shared successfully.',
-      }))
-      setShareError((current) => ({
-        ...current,
-        [assetId]: '',
-      }))
-      setShareAssetId(null)
-      setShareSearchInput('')
-      setShareSearch('')
-    } catch (mutationError) {
-      setShareFeedback((current) => ({
-        ...current,
-        [assetId]: '',
-      }))
-      setShareError((current) => ({
-        ...current,
-        [assetId]: (mutationError as Error)?.message || 'Share failed',
-      }))
-    }
-  }
+        setShareFeedback((current) => ({
+          ...current,
+          [assetId]: response.message || 'Asset shared successfully.',
+        }))
+        setShareError((current) => ({
+          ...current,
+          [assetId]: '',
+        }))
+        setShareAssetId(null)
+        setShareSearchInput('')
+        setShareSearch('')
+      } catch (mutationError) {
+        setShareFeedback((current) => ({
+          ...current,
+          [assetId]: '',
+        }))
+        setShareError((current) => ({
+          ...current,
+          [assetId]: (mutationError as Error)?.message || 'Share failed',
+        }))
+      }
+    },
+    [shareMutation]
+  )
 
   return (
     <div className="assets-page">

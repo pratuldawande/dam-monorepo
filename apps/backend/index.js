@@ -1,9 +1,9 @@
-const app = require('./src/app')
-const { connectDB } = require('./src/config/db')
-const { ensureBucketExists } = require('./src/config/minio')
-const { connectRabbitMQ, startAssetConsumer } = require('./src/config/rabbitmq')
-const { processAsset } = require('./src/services/asset.service')
-const { PORT } = require('./src/config/env')
+import app from '@/app'
+import { connectDB } from '@/config/db'
+import { ensureBucketExists } from '@/config/minio'
+import { connectRabbitMQ, startAssetConsumer } from '@/config/rabbitmq'
+import { processAsset } from '@/services/asset.service'
+import { PORT } from '@/config/env'
 
 const startServer = async () => {
   await connectDB()

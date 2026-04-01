@@ -9,7 +9,7 @@ import {
   type MeResponse,
   type RegisterRequest,
   type RegisterResponse,
-} from '../api/auth.api'
+} from '@/api/auth.api'
 
 const authUserQueryKey = ['auth-user'] as const
 

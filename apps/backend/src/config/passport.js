@@ -1,6 +1,8 @@
-const passport = require('passport')
-const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt')
-const { JWT_SECRET } = require('./env')
+import passport from 'passport'
+import * as passportJwt from 'passport-jwt'
+import { JWT_SECRET } from '@/config/env'
+
+const { Strategy: JwtStrategy, ExtractJwt } = passportJwt
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -18,4 +20,4 @@ passport.use(
   })
 )
 
-module.exports = passport
+export default passport
