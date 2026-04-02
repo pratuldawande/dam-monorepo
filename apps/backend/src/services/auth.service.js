@@ -4,8 +4,10 @@
  */
 
 import * as jwt from 'jsonwebtoken'
+import { AUTH_MESSAGES } from '@/constants'
 import { JWT_EXPIRE, JWT_SECRET } from '@/config/env'
-import User from '@/models/User'
+import * as userRepository from '@/repositories/user.repository'
+import AppError from '@/utils/app-error'
 
 /**
  * Register a new user
@@ -17,16 +19,13 @@ import User from '@/models/User'
  */
 const registerUser = async (name, email, password) => {
   // Check if user already exists
-  const existingUser = await User.findOne({ email })
+  const existingUser = await userRepository.findByEmail(email)
   if (existingUser) {
-    const error = new Error('Email already registered')
-    error.status = 404
-    throw error
+    throw AppError.conflict(AUTH_MESSAGES.emailAlreadyRegistered)
   }
 
   // Create new user (password will be hashed in pre-save hook)
-  const user = new User({ name, email, password })
-  await user.save()
+  const user = await userRepository.createUser({ name, email, password })
 
   // Generate JWT token
   const token = generateToken(user._id)
@@ -50,22 +49,17 @@ const registerUser = async (name, email, password) => {
  */
 const loginUser = async (email, password) => {
   // Fetch user including password field (normally excluded)
-  const user = await User.findOne({ email }).select('+password')
+  const user = await userRepository.findByEmail(email, { includePassword: true })
 
   if (!user) {
-    const error = new Error('Invalid email or password')
-    error.status = 404
-    throw error
+    throw AppError.unauthorized(AUTH_MESSAGES.invalidCredentials)
   }
 
   // Verify password matches stored hash
   const isPasswordValid = await user.matchPassword(password)
 
   if (!isPasswordValid) {
-    // throw new Error("Invalid email or password");
-    const error = new Error('Invalid email or password')
-    error.status = 404
-    throw error
+    throw AppError.unauthorized(AUTH_MESSAGES.invalidCredentials)
   }
 
   // Generate JWT token
@@ -82,12 +76,10 @@ const loginUser = async (email, password) => {
 }
 
 const getCurrentUser = async (userId) => {
-  const user = await User.findById(userId).select('_id name email')
+  const user = await userRepository.findById(userId)
 
   if (!user) {
-    const error = new Error('User not found')
-    error.status = 404
-    throw error
+    throw AppError.notFound(AUTH_MESSAGES.userNotFound)
   }
 
   return {
@@ -112,7 +104,7 @@ const listExistingUsers = async ({ currentUserId, search } = {}) => {
     ]
   }
 
-  const users = await User.find(filter).select('_id name email').sort({ name: 1, email: 1 }).lean()
+  const users = await userRepository.listExistingUsers(filter)
 
   return users.map((user) => ({
     id: user._id,

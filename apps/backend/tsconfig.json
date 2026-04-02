@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
+    "allowJs": true,
     "baseUrl": ".",
+    "checkJs": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": ["./src/*"]
+    },
+    "target": "ES2023"
   },
   "include": ["index.js", "src/**/*.js"]
 }

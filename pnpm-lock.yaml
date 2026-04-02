@@ -71,6 +71,9 @@ importers:
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       nodemon:
         specifier: ^3.1.14
@@ -96,6 +99,9 @@ importers:
       react-router-dom:
         specifier: ^7.13.1
         version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@babel/core':
         specifier: ^7.29.0

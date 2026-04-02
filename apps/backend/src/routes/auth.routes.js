@@ -4,6 +4,7 @@
  */
 
 import express from 'express'
+import { API_ROUTES } from '@/constants'
 import * as authController from '@/controllers/auth.controller'
 import authMiddleware from '@/middlewares/auth.middleware'
 import { validate } from '@/middlewares/validate.middleware'
@@ -12,10 +13,10 @@ import { createUserValidator, loginUserValidator } from '@/validators/user.valid
 const router = express.Router()
 
 // Public routes
-router.post('/register', createUserValidator, validate, authController.register)
-router.post('/login', loginUserValidator, validate, authController.login)
-router.post('/logout', authMiddleware, authController.logout)
-router.get('/me', authMiddleware, authController.getProfile)
-router.get('/users', authMiddleware, authController.listUsers)
+router.post(API_ROUTES.register, createUserValidator, validate, authController.register)
+router.post(API_ROUTES.login, loginUserValidator, validate, authController.login)
+router.post(API_ROUTES.logout, authMiddleware, authController.logout)
+router.get(API_ROUTES.me, authMiddleware, authController.getProfile)
+router.get(API_ROUTES.users, authMiddleware, authController.listUsers)
 
 export default router

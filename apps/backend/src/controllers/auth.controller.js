@@ -4,10 +4,11 @@
  */
 
 import { registerUser, loginUser, getCurrentUser, listExistingUsers } from '@/services/auth.service'
+import { AUTH_MESSAGES, HTTP_STATUS } from '@/constants'
 
 /**
  * Register a new user
- * POST /api/auth/register
+ * POST /api/v1/auth/register
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
@@ -18,9 +19,9 @@ const register = async (req, res, next) => {
     // Register user via service
     const result = await registerUser(name, email, password)
 
-    res.status(201).json({
+    res.status(HTTP_STATUS.created).json({
       success: true,
-      message: 'User registered successfully',
+      message: AUTH_MESSAGES.registered,
       data: result,
     })
   } catch (error) {
@@ -30,7 +31,7 @@ const register = async (req, res, next) => {
 
 /**
  * Login user with email and password
- * POST /api/auth/login
+ * POST /api/v1/auth/login
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
@@ -41,41 +42,34 @@ const login = async (req, res, next) => {
     // Login user via service
     const result = await loginUser(email, password)
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.ok).json({
       success: true,
-      message: 'Login successful',
+      message: AUTH_MESSAGES.loginSuccess,
       data: result,
     })
   } catch (error) {
-    // Handle specific authentication errors
-    if (error.message.includes('Invalid email or password')) {
-      return res.status(401).json({
-        success: false,
-        message: error.message,
-      })
-    }
     next(error)
   }
 }
 
 /**
  * Logout user
- * POST /api/auth/logout
+ * POST /api/v1/auth/logout
  * Note: JWT tokens are stateless, so logout is handled client-side
  * by removing the token from storage
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
 const logout = (req, res) => {
-  res.status(200).json({
+  res.status(HTTP_STATUS.ok).json({
     success: true,
-    message: 'Logout successful.',
+    message: AUTH_MESSAGES.logoutSuccess,
   })
 }
 
 /**
  * Get current user profile
- * GET /api/auth/profile
+ * GET /api/v1/auth/me
  * Protected route - requires valid JWT token
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -83,7 +77,7 @@ const logout = (req, res) => {
 const getProfile = async (req, res, next) => {
   try {
     const user = await getCurrentUser(req.user.userId)
-    res.status(200).json({
+    res.status(HTTP_STATUS.ok).json({
       success: true,
       data: user,
     })
@@ -99,7 +93,7 @@ const listUsers = async (req, res, next) => {
       search: req.query.search,
     })
 
-    res.status(200).json({
+    res.status(HTTP_STATUS.ok).json({
       success: true,
       data: users,
     })

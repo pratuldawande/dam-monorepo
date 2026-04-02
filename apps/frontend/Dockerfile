@@ -14,7 +14,7 @@ RUN pnpm install --filter frontend... --frozen-lockfile --prod=false
 
 COPY apps/frontend apps/frontend
 
-ARG VITE_API_BASE=/api
+ARG VITE_API_BASE=/api/v1
 ENV VITE_API_BASE=$VITE_API_BASE
 
 RUN pnpm --filter frontend build

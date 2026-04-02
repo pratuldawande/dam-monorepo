@@ -1,27 +1,37 @@
 import { body, query } from 'express-validator'
+import {
+  ASSET_FIELDS,
+  ASSET_MESSAGES,
+  ASSET_STATUS,
+  ASSET_TYPE,
+  AUTH_FIELDS,
+  ERROR_MESSAGES,
+  VALIDATION_MESSAGES,
+} from '@/constants'
 import { MAX_FILE_SIZE_BYTES } from '@/config/env'
 
 const assetUploadValidator = [
-  body('_assetUpload').custom((_, { req }) => {
+  body(ASSET_FIELDS.assetUpload).custom((_, { req }) => {
     const files = req.files || []
 
     if (!Array.isArray(files) || files.length === 0) {
-      throw new Error('At least one file is required')
+      throw new Error(ASSET_MESSAGES.uploadRequiresFile)
     }
     files.forEach((file) => {
       if (!file.originalname) {
-        throw new Error('Each uploaded file must have an original name')
+        throw new Error(ASSET_MESSAGES.uploadMissingOriginalName)
       }
 
       if (!file.mimetype) {
-        throw new Error('Each uploaded file must include a MIME type')
+        throw new Error(ASSET_MESSAGES.uploadMissingMimeType)
       }
 
       if (!Number.isFinite(file.size) || file.size <= 0) {
-        throw new Error('Each uploaded file must have a valid size')
+        throw new Error(ASSET_MESSAGES.uploadInvalidSize)
       }
+
       if (file.size > MAX_FILE_SIZE_BYTES) {
-        throw new Error('Uploaded file exceeds the configured size limit')
+        throw new Error(ERROR_MESSAGES.uploadSizeExceeded)
       }
     })
 
@@ -30,33 +40,42 @@ const assetUploadValidator = [
 ]
 
 const assetListValidator = [
-  query('page')
+  query(ASSET_FIELDS.page)
     .optional()
     .isInt({ min: 1 })
-    .withMessage('page must be an integer greater than 0')
+    .withMessage(VALIDATION_MESSAGES.pageInvalid)
     .toInt(),
-  query('limit')
+  query(ASSET_FIELDS.limit)
     .optional()
     .isInt({ min: 1, max: 100 })
-    .withMessage('limit must be an integer between 1 and 100')
+    .withMessage(VALIDATION_MESSAGES.limitInvalid)
     .toInt(),
-  query('search').optional().isString().withMessage('search must be a string').trim(),
-  query('status')
+  query(ASSET_FIELDS.search)
     .optional()
-    .isIn(['queued', 'processing', 'completed', 'failed'])
-    .withMessage('status must be one of queued, processing, completed, or failed'),
-  query('type')
+    .isString()
+    .withMessage(VALIDATION_MESSAGES.searchInvalid)
+    .trim(),
+  query(ASSET_FIELDS.status)
     .optional()
-    .isIn(['image', 'video', 'other'])
-    .withMessage('type must be one of image, video, or other'),
+    .isIn([
+      ASSET_STATUS.queued,
+      ASSET_STATUS.processing,
+      ASSET_STATUS.completed,
+      ASSET_STATUS.failed,
+    ])
+    .withMessage(VALIDATION_MESSAGES.statusInvalid),
+  query(ASSET_FIELDS.type)
+    .optional()
+    .isIn([ASSET_TYPE.image, ASSET_TYPE.video, ASSET_TYPE.other])
+    .withMessage(VALIDATION_MESSAGES.typeInvalid),
 ]
 
 const assetShareValidator = [
-  body('userId')
+  body(AUTH_FIELDS.userId)
     .notEmpty()
-    .withMessage('userId is required')
+    .withMessage(VALIDATION_MESSAGES.userIdRequired)
     .isMongoId()
-    .withMessage('userId must be a valid user id'),
+    .withMessage(VALIDATION_MESSAGES.userIdInvalid),
 ]
 
 export { assetUploadValidator, assetListValidator, assetShareValidator }

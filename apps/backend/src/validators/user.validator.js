@@ -1,29 +1,34 @@
-import { body } from 'express-validator' //zod
+import { body } from 'express-validator'
+import { AUTH_FIELDS, VALIDATION_MESSAGES } from '@/constants'
 
 const createUserValidator = [
-  body('name').notEmpty().withMessage('Name required'),
-  body('email').notEmpty().withMessage('Email is required').isEmail().withMessage('Invalid email'),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
-  body('confirmPassword').custom((value, { req }) => {
-    if (value !== req.body.password) {
-      throw new Error('Passwords do not match')
+  body(AUTH_FIELDS.name).notEmpty().withMessage(VALIDATION_MESSAGES.nameRequired),
+  body(AUTH_FIELDS.email)
+    .notEmpty()
+    .withMessage(VALIDATION_MESSAGES.emailRequired)
+    .isEmail()
+    .withMessage(VALIDATION_MESSAGES.invalidEmail),
+  body(AUTH_FIELDS.password).isLength({ min: 8 }).withMessage(VALIDATION_MESSAGES.passwordTooShort),
+  body(AUTH_FIELDS.confirmPassword).custom((value, { req }) => {
+    if (value !== req.body[AUTH_FIELDS.password]) {
+      throw new Error(VALIDATION_MESSAGES.passwordsDoNotMatch)
     }
     return true
   }),
 ]
 
 const loginUserValidator = [
-  body('email')
+  body(AUTH_FIELDS.email)
     .notEmpty()
-    .withMessage('Email is required')
+    .withMessage(VALIDATION_MESSAGES.emailRequired)
     .isEmail()
-    .withMessage('Invalid email format'),
+    .withMessage(VALIDATION_MESSAGES.invalidEmailFormat),
 
-  body('password')
+  body(AUTH_FIELDS.password)
     .notEmpty()
-    .withMessage('Password is required')
+    .withMessage(VALIDATION_MESSAGES.passwordRequired)
     .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters'),
+    .withMessage(VALIDATION_MESSAGES.passwordTooShort),
 ]
 
 export { createUserValidator, loginUserValidator }

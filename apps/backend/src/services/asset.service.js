@@ -4,36 +4,21 @@ import path from 'path'
 import { pipeline } from 'stream/promises'
 import ffmpeg from 'fluent-ffmpeg'
 import sharp from 'sharp'
-import {
-  MINIO_BUCKET,
-  MINIO_ENDPOINT,
-  MINIO_PORT,
-  MINIO_PUBLIC_BASE_URL,
-  MINIO_USE_SSL,
-} from '@/config/env'
+import { ASSET_MESSAGES, ASSET_STATUS } from '@/constants'
+import { MINIO_BUCKET } from '@/config/env'
 import { minioClient } from '@/config/minio'
 import { publishAssetMessage } from '@/config/rabbitmq'
-import User from '@/models/User'
-import Asset from '@/models/asset'
-
-const trimTrailingSlash = (value = '') => value.replace(/\/+$/, '')
-
-const buildObjectUrl = (objectName) => {
-  if (MINIO_PUBLIC_BASE_URL) {
-    return `${trimTrailingSlash(MINIO_PUBLIC_BASE_URL)}/${MINIO_BUCKET}/${objectName}`
-  }
-
-  const protocol = MINIO_USE_SSL ? 'https' : 'http'
-  return `${protocol}://${MINIO_ENDPOINT}:${MINIO_PORT}/${MINIO_BUCKET}/${objectName}`
-}
+import * as assetRepository from '@/repositories/asset.repository'
+import * as userRepository from '@/repositories/user.repository'
+import { serializeAsset, serializeAssets } from '@/services/asset-access.service'
+import { buildAssetListFilter } from '@/services/asset-query.service'
+import AppError from '@/utils/app-error'
 
 const buildObjectName = (originalName) =>
   `${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${originalName}`
 
 const isImage = (mimeType = '') => mimeType.startsWith('image/')
 const isVideo = (mimeType = '') => mimeType.startsWith('video/')
-const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
 const uploadBufferToMinio = async ({ objectName, buffer, contentType }) => {
   await minioClient.putObject(MINIO_BUCKET, objectName, buffer, buffer.length, {
     'Content-Type': contentType,
@@ -42,7 +27,6 @@ const uploadBufferToMinio = async ({ objectName, buffer, contentType }) => {
   return {
     bucket: MINIO_BUCKET,
     objectName,
-    url: buildObjectUrl(objectName),
     contentType,
     size: buffer.length,
   }
@@ -59,7 +43,6 @@ const uploadFileToMinio = async ({ objectName, filePath, contentType }) => {
   return {
     bucket: MINIO_BUCKET,
     objectName,
-    url: buildObjectUrl(objectName),
     contentType,
     size: stats.size,
   }
@@ -163,7 +146,7 @@ const generateVideoDerivatives = async ({ asset, objectName, tempDir }) => {
   const videoStream = metadata.streams?.find((stream) => stream.codec_type === 'video')
 
   if (!videoStream) {
-    throw new Error(`Video stream missing for asset ${asset._id}`)
+    throw AppError.badRequest(`${ASSET_MESSAGES.videoStreamMissingPrefix} ${asset._id}`)
   }
 
   const sourceHeight = Number(videoStream.height) || 0
@@ -263,14 +246,13 @@ const uploadFileToStorage = async ({ file, userId }) => {
         originalName: file.originalname,
         filename: objectName,
         bucket: MINIO_BUCKET,
-        url: buildObjectUrl(objectName),
         type: file.mimetype,
         size: file.size,
         tags: [file.mimetype.split('/')[0]],
         metadata: {
           fieldName: file.fieldname,
         },
-        status: 'queued',
+        status: ASSET_STATUS.queued,
       },
       message: {
         userId: userId.toString(),
@@ -298,7 +280,7 @@ const uploadAssets = async ({ files, userId }) => {
 
   try {
     stagedUploads = await Promise.all(files.map((file) => uploadFileToStorage({ file, userId })))
-    createdAssets = await Asset.insertMany(stagedUploads.map(({ document }) => document))
+    createdAssets = await assetRepository.createMany(stagedUploads.map(({ document }) => document))
 
     await Promise.all(
       createdAssets.map((asset, index) =>
@@ -309,104 +291,51 @@ const uploadAssets = async ({ files, userId }) => {
       )
     )
 
-    return createdAssets
+    return serializeAssets(createdAssets)
   } catch (error) {
     await Promise.all([
       ...stagedUploads.map(({ document }) => removeObjectIfExists(document.filename)),
-      ...createdAssets.map((asset) => Asset.findByIdAndDelete(asset._id)),
+      assetRepository.deleteManyByIds(createdAssets.map((asset) => asset._id)),
     ])
 
     throw error
   }
 }
 
-const uploadAsset = async ({ file, userId }) => {
-  const [asset] = await uploadAssets({ files: [file], userId })
-
-  return asset
-}
-
-const buildAssetListFilter = ({ search, status, type }) => {
-  const filter = {}
-
-  if (status) {
-    filter.status = status
-  }
-
-  if (type === 'image') {
-    filter.type = { $regex: /^image\// }
-  } else if (type === 'video') {
-    filter.type = { $regex: /^video\// }
-  } else if (type === 'other') {
-    filter.type = { $not: /^(image|video)\// }
-  }
-
-  if (search) {
-    const searchRegex = new RegExp(escapeRegExp(search), 'i')
-    filter.$or = [
-      { originalName: searchRegex },
-      { filename: searchRegex },
-      { type: searchRegex },
-      { tags: searchRegex },
-    ]
-  }
-
-  return filter
-}
-
 const listAssets = async ({ page = 1, limit = 10, search, status, type, userId } = {}) => {
   const normalizedPage = Number(page) || 1
   const normalizedLimit = Number(limit) || 10
-  const filter = buildAssetListFilter({ search, status, type })
-
-  if (userId) {
-    filter.$and = [
-      ...(filter.$and || []),
-      {
-        $or: [{ userId }, { sharedWith: userId }],
-      },
-    ]
-  }
+  const filter = buildAssetListFilter({ search, status, type, userId })
 
   const [assets, total] = await Promise.all([
-    Asset.find(filter)
-      .populate('userId', 'name email')
-      .populate('sharedWith', 'name email')
-      .sort({ createdAt: -1 })
-      .skip((normalizedPage - 1) * normalizedLimit)
-      .limit(normalizedLimit)
-      .lean(),
-    Asset.countDocuments(filter),
+    assetRepository.findMany(filter, { page: normalizedPage, limit: normalizedLimit }),
+    assetRepository.count(filter),
   ])
 
   return {
     success: true,
-    data: assets,
+    data: await serializeAssets(assets),
     meta: {
       page: normalizedPage,
       limit: normalizedLimit,
       total,
       totalPages: total === 0 ? 0 : Math.ceil(total / normalizedLimit),
       search: search || '',
-      status: status || 'all',
+      status: status || ASSET_STATUS.all,
       type: type || 'all',
     },
   }
 }
 
 const deleteAsset = async ({ assetId, userId }) => {
-  const asset = await Asset.findById(assetId).lean()
+  const asset = await assetRepository.findByIdLean(assetId)
 
   if (!asset) {
-    const error = new Error('Asset not found')
-    error.status = 404
-    throw error
+    throw AppError.notFound(ASSET_MESSAGES.assetNotFound)
   }
 
   if (asset.userId?.toString() !== userId?.toString()) {
-    const error = new Error('You are not allowed to delete this asset')
-    error.status = 403
-    throw error
+    throw AppError.forbidden(ASSET_MESSAGES.deleteForbidden)
   }
 
   const derivedObjects = [
@@ -419,42 +348,34 @@ const deleteAsset = async ({ assetId, userId }) => {
     ...derivedObjects.map((objectName) => removeObjectIfExists(objectName)),
   ])
 
-  await Asset.findByIdAndDelete(assetId)
+  await assetRepository.deleteById(assetId)
 
   return {
     success: true,
-    message: 'Asset deleted successfully',
+    message: ASSET_MESSAGES.deletedSuccess,
   }
 }
 
 const shareAssetWithUser = async ({ assetId, ownerId, targetUserId }) => {
   const [asset, userToShare] = await Promise.all([
-    Asset.findById(assetId),
-    User.findById(targetUserId).select('_id name email'),
+    assetRepository.findById(assetId),
+    userRepository.findById(targetUserId),
   ])
 
   if (!asset) {
-    const error = new Error('Asset not found')
-    error.status = 404
-    throw error
+    throw AppError.notFound(ASSET_MESSAGES.assetNotFound)
   }
 
   if (asset.userId?.toString() !== ownerId?.toString()) {
-    const error = new Error('You are not allowed to share this asset')
-    error.status = 403
-    throw error
+    throw AppError.forbidden(ASSET_MESSAGES.shareForbidden)
   }
 
   if (!userToShare) {
-    const error = new Error('Selected user does not exist')
-    error.status = 404
-    throw error
+    throw AppError.notFound(ASSET_MESSAGES.selectedUserMissing)
   }
 
   if (userToShare._id.toString() === ownerId?.toString()) {
-    const error = new Error('You already own this asset')
-    error.status = 400
-    throw error
+    throw AppError.badRequest(ASSET_MESSAGES.alreadyOwner)
   }
 
   const alreadyShared = asset.sharedWith?.some(
@@ -462,38 +383,32 @@ const shareAssetWithUser = async ({ assetId, ownerId, targetUserId }) => {
   )
 
   if (alreadyShared) {
-    const populatedAsset = await Asset.findById(assetId)
-      .populate('userId', 'name email')
-      .populate('sharedWith', 'name email')
-      .lean()
+    const populatedAsset = await assetRepository.findByIdPopulated(assetId)
 
     return {
       success: true,
-      message: 'Asset already shared with this user',
-      data: populatedAsset,
+      message: ASSET_MESSAGES.alreadyShared,
+      data: await serializeAsset(populatedAsset),
     }
   }
 
   asset.sharedWith = [...(asset.sharedWith || []), userToShare._id]
   await asset.save()
 
-  const populatedAsset = await Asset.findById(assetId)
-    .populate('userId', 'name email')
-    .populate('sharedWith', 'name email')
-    .lean()
+  const populatedAsset = await assetRepository.findByIdPopulated(assetId)
 
   return {
     success: true,
-    message: 'Asset shared successfully',
-    data: populatedAsset,
+    message: ASSET_MESSAGES.sharedSuccess,
+    data: await serializeAsset(populatedAsset),
   }
 }
 
 const processAsset = async ({ assetId }) => {
-  const asset = await Asset.findById(assetId)
+  const asset = await assetRepository.findById(assetId)
 
   if (!asset) {
-    throw new Error(`Asset ${assetId} not found`)
+    throw AppError.notFound(`Asset ${assetId} not found`)
   }
 
   const baseMetadata = {
@@ -501,8 +416,8 @@ const processAsset = async ({ assetId }) => {
     processingStartedAt: new Date().toISOString(),
   }
 
-  await Asset.findByIdAndUpdate(assetId, {
-    status: 'processing',
+  await assetRepository.updateById(assetId, {
+    status: ASSET_STATUS.processing,
     metadata: baseMetadata,
   })
 
@@ -524,8 +439,8 @@ const processAsset = async ({ assetId }) => {
       })
     }
 
-    await Asset.findByIdAndUpdate(assetId, {
-      status: 'completed',
+    await assetRepository.updateById(assetId, {
+      status: ASSET_STATUS.completed,
       metadata: {
         ...baseMetadata,
         ...derivedMetadata,
@@ -534,8 +449,8 @@ const processAsset = async ({ assetId }) => {
       },
     })
   } catch (error) {
-    await Asset.findByIdAndUpdate(assetId, {
-      status: 'failed',
+    await assetRepository.updateById(assetId, {
+      status: ASSET_STATUS.failed,
       metadata: {
         ...baseMetadata,
         processingFailedAt: new Date().toISOString(),
@@ -549,4 +464,4 @@ const processAsset = async ({ assetId }) => {
   }
 }
 
-export { deleteAsset, listAssets, processAsset, shareAssetWithUser, uploadAsset, uploadAssets }
+export { deleteAsset, listAssets, processAsset, shareAssetWithUser, uploadAssets }

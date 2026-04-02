@@ -1,4 +1,5 @@
 import * as assetService from '@/services/asset.service'
+import { ASSET_MESSAGES } from '@/constants'
 
 const listAssets = async (req, res, next) => {
   try {
@@ -21,7 +22,7 @@ const uploadAssets = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Assets uploaded successfully',
+      message: ASSET_MESSAGES.uploadedSuccess,
       data: uploads,
     })
   } catch (err) {

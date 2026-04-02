@@ -1,15 +1,18 @@
+import { ERROR_MESSAGES, HTTP_STATUS } from '@/constants'
+
 // eslint-disable-next-line no-unused-vars
 const errorMiddleware = (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(413).json({
+    return res.status(HTTP_STATUS.payloadTooLarge).json({
       success: false,
-      message: 'Uploaded file exceeds the configured size limit',
+      message: ERROR_MESSAGES.uploadSizeExceeded,
     })
   }
 
-  res.status(err.status || 500).json({
+  res.status(err.statusCode || err.status || HTTP_STATUS.internalServerError).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: err.message || ERROR_MESSAGES.internalServerError,
+    ...(err.details ? { details: err.details } : {}),
   })
 }
 
